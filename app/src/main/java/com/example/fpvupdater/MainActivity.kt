@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
@@ -74,6 +75,10 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 )
+
+                LaunchedEffect(Unit) {
+                    viewModel.refreshData(this@MainActivity)
+                }
 
                 AppNavigation(viewModel)
             }
@@ -127,7 +132,7 @@ fun MainScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Paramètres")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(id = R.string.settings_title))
                     }
                 }
             )
@@ -152,7 +157,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Paramètres") },
+                title = { Text(stringResource(id = R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
@@ -174,7 +179,7 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Notifications de mise à jour", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(id = R.string.notifications_label), style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.weight(1f))
                         Switch(
                             checked = notificationsEnabled,
@@ -207,7 +212,7 @@ fun MainContent(
         projects.sortedBy { it.name.lowercase() } 
     }
 
-    val pullRefreshState = rememberPullRefreshState(isRefreshing, onRefresh = { viewModel.refreshData() })
+    val pullRefreshState = rememberPullRefreshState(isRefreshing, onRefresh = { viewModel.refreshData(context) })
 
     Box(modifier = modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
         Column {
@@ -285,7 +290,7 @@ fun ProjectCard(project: ProjectInfo, onOpenUrl: (String) -> Unit) {
                 ) {
                     // Version Stable
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Stable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text(stringResource(id = R.string.stable_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                         AssistChip(
                             onClick = { if (project.stableUrl.isNotEmpty()) onOpenUrl(project.stableUrl) },
                             label = { 
@@ -307,7 +312,7 @@ fun ProjectCard(project: ProjectInfo, onOpenUrl: (String) -> Unit) {
                     
                     // Version Beta
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Beta", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text(stringResource(id = R.string.beta_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                         AssistChip(
                             onClick = { if (project.betaUrl.isNotEmpty()) onOpenUrl(project.betaUrl) },
                             label = { 
@@ -370,8 +375,8 @@ fun scheduleUpdateCheck(context: Context) {
 
 private fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val name = "Mises à jour FPV"
-        val descriptionText = "Notifications lors de nouvelles versions"
+        val name = context.getString(R.string.notification_channel_name)
+        val descriptionText = context.getString(R.string.notification_channel_desc)
         val importance = NotificationManager.IMPORTANCE_HIGH
         val channel = NotificationChannel("FPV_UPDATES_CHANNEL", name, importance).apply {
             description = descriptionText
@@ -394,9 +399,9 @@ data class ProjectInfo(
     val owner: String,
     val repo: String,
     val iconUrl: String = "",
-    val stableVersion: String = "Chargement...",
+    val stableVersion: String = "Loading...",
     val stableUrl: String = "",
-    val betaVersion: String = "Chargement...",
+    val betaVersion: String = "Loading...",
     val betaUrl: String = ""
 )
 

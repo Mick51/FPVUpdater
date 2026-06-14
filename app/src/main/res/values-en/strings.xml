@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">FPV Updater</string>
+    <string name="settings_title">Settings</string>
+    <string name="auto_update_label">Automatic update</string>
+    <string name="notifications_label">Notifications</string>
+    <string name="version_label">Installed version</string>
+    <string name="check_updates_btn">Check for updates</string>
+
+    <string name="update_available">Update available</string>
+    <string name="new_version_title">New version %1$s</string>
+    <string name="new_version_message">Version %1$s is available!</string>
+    <string name="notification_channel_name">FPV Updates</string>
+    <string name="notification_channel_desc">Notifications for new versions</string>
+    <string name="loading">Loading…</string>
+    <string name="no_version">No version</string>
+    <string name="network_error">Network error</string>
+    <string name="stable_label">Stable</string>
+    <string name="beta_label">Beta</string>
+</resources>

@@ -1,3 +1,19 @@
 <resources>
-    <string name="app_name">FPVUpdater</string>
+    <string name="app_name">FPV Updater</string>
+    <string name="settings_title">Paramètres</string>
+    <string name="auto_update_label">Mise à jour automatique</string>
+    <string name="notifications_label">Notifications</string>
+    <string name="version_label">Version installée</string>
+    <string name="check_updates_btn">Rechercher les mises à jour</string>
+
+    <string name="update_available">Mise à jour disponible</string>
+    <string name="new_version_title">Nouvelle version %1$s</string>
+    <string name="new_version_message">La version %1$s est disponible !</string>
+    <string name="notification_channel_name">Mises à jour FPV</string>
+    <string name="notification_channel_desc">Notifications pour les nouvelles versions</string>
+    <string name="loading">Chargement&#8230;</string>
+    <string name="no_version">Aucune version</string>
+    <string name="network_error">Erreur réseau</string>
+    <string name="stable_label">Stable</string>
+    <string name="beta_label">Beta</string>
 </resources>

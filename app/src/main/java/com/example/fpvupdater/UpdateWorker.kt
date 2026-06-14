@@ -76,10 +76,13 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
     }
 
     private fun sendNotification(projectName: String, version: String) {
+        val title = applicationContext.getString(R.string.new_version_title, projectName)
+        val message = applicationContext.getString(R.string.new_version_message, version)
+
         val builder = NotificationCompat.Builder(applicationContext, "FPV_UPDATES_CHANNEL")
             .setSmallIcon(android.R.drawable.stat_notify_chat)
-            .setContentTitle("Nouvelle version $projectName")
-            .setContentText("La version $version est disponible !")
+            .setContentTitle(title)
+            .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
 
@@ -92,8 +95,8 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Mises à jour FPV"
-            val descriptionText = "Notifications pour les nouvelles versions"
+            val name = applicationContext.getString(R.string.notification_channel_name)
+            val descriptionText = applicationContext.getString(R.string.notification_channel_desc)
             val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel("FPV_UPDATES_CHANNEL", name, importance).apply {
                 description = descriptionText

@@ -41,7 +41,6 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     init {
         Log.d("API_DEBUG", "Token chargé : ${BuildConfig.GITHUB_TOKEN.take(10)}...")
         loadLocalData()
-        refreshData()
     }
 
     private fun getStorageKey(project: ProjectInfo): String {
@@ -58,7 +57,45 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         }
     }
 
-    fun refreshData() {
+    private fun isNewVersionAvailable(local: String, online: String): Boolean {
+        // Simple comparison to check for a new version
+        val ignoredValues = listOf("Chargement...", "Loading...", "Aucune version", "No version", "Erreur réseau", "Network error")
+        return !ignoredValues.contains(local) && local != online
+    }
+
+    private fun sendNotification(context: Context, projectName: String, version: String) {
+        val title = context.getString(R.string.new_version_title, projectName)
+        val message = context.getString(R.string.new_version_message, version)
+        
+        val builder = androidx.core.app.NotificationCompat.Builder(context, "FPV_UPDATES_CHANNEL")
+            .setSmallIcon(android.R.drawable.stat_notify_chat)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+
+        with(androidx.core.app.NotificationManagerCompat.from(context)) {
+            try {
+                notify(projectName.hashCode(), builder.build())
+            } catch (_: SecurityException) { }
+        }
+    }
+
+    private fun createNotificationChannel(context: Context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val name = context.getString(R.string.notification_channel_name)
+            val descriptionText = context.getString(R.string.notification_channel_desc)
+            val importance = android.app.NotificationManager.IMPORTANCE_HIGH
+            val channel = android.app.NotificationChannel("FPV_UPDATES_CHANNEL", name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: android.app.NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    fun refreshData(context: Context? = null) {
         viewModelScope.launch {
             _isRefreshing.value = true
             
@@ -86,19 +123,35 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                                 }
                             }
 
-                            if (stableResult != null) dataStoreManager.saveVersion("${project.repo}_stable", stableResult.tagName)
-                            if (beta != null) dataStoreManager.saveVersion("${project.repo}_beta", beta.tagName)
+                            val localStable = dataStoreManager.getVersion("${project.repo}_stable")
+                            val localBeta = dataStoreManager.getVersion("${project.repo}_beta")
+
+                            if (stableResult != null) {
+                                if (context != null && localStable != null && isNewVersionAvailable(localStable, stableResult.tagName)) {
+                                    createNotificationChannel(context)
+                                    sendNotification(context, "${project.name} (Stable)", stableResult.tagName)
+                                }
+                                dataStoreManager.saveVersion("${project.repo}_stable", stableResult.tagName)
+                            }
+                            
+                            if (beta != null) {
+                                if (context != null && localBeta != null && isNewVersionAvailable(localBeta, beta.tagName)) {
+                                    createNotificationChannel(context)
+                                    sendNotification(context, "${project.name} (Beta)", beta.tagName)
+                                }
+                                dataStoreManager.saveVersion("${project.repo}_beta", beta.tagName)
+                            }
 
                             project.copy(
-                                stableVersion = stableResult?.tagName ?: "Aucune version",
+                                stableVersion = stableResult?.tagName ?: "No version",
                                 stableUrl = stableResult?.htmlUrl ?: "",
-                                betaVersion = beta?.tagName ?: "Aucune Beta",
+                                betaVersion = beta?.tagName ?: "No Beta",
                                 betaUrl = beta?.htmlUrl ?: ""
                             )
                         } catch (e: Exception) {
                             Log.e("MainViewModel", "Erreur lors du chargement de ${project.name}: ${e.message}", e)
-                            val localStable = dataStoreManager.getVersion("${project.repo}_stable") ?: "Erreur réseau"
-                            val localBeta = dataStoreManager.getVersion("${project.repo}_beta") ?: "Erreur réseau"
+                            val localStable = dataStoreManager.getVersion("${project.repo}_stable") ?: "Network error"
+                            val localBeta = dataStoreManager.getVersion("${project.repo}_beta") ?: "Network error"
                             project.copy(stableVersion = localStable, betaVersion = localBeta)
                         }
                     }
