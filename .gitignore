@@ -4,6 +4,7 @@
 *.key
 *.pem
 secrets.txt
+local.properties
 
 # --- Fichiers de dump Java ---
 *.hprof
