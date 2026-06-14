@@ -1,4 +1,27 @@
-.gradle/
-.idea/
-build/
-local.properties
+# --- Secrets et accès ---
+.env
+*.token
+*.key
+*.pem
+secrets.txt
+
+# --- Fichiers de dump Java ---
+*.hprof
+hs_err_pid*
+
+# --- Fichiers système ---
+.DS_Store
+Thumbs.db
+
+# --- Logs et fichiers temporaires ---
+*.log
+*.tmp
+*.bak
+temp/
+
+# --- Dossiers de dépendances / Outils ---
+.git-filter-repo/
+bfg-*.jar
+node_modules/
+venv/
+__pycache__/
