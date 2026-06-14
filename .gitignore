@@ -26,3 +26,9 @@ bfg-*.jar
 node_modules/
 venv/
 __pycache__/
+
+# --- Gradle et Build ---
+.gradle/
+build/
+app/build/
+.idea/
