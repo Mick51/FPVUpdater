@@ -13,6 +13,25 @@ import kotlinx.coroutines.flow.first
 
 class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
+    private fun parseVersion(version: String): List<Int> {
+        return version.lowercase()
+            .replace(Regex("[^0-9.]"), "")
+            .split(".")
+            .mapNotNull { it.toIntOrNull() }
+    }
+
+    private fun compareVersions(v1: String, v2: String): Int {
+        val parts1 = parseVersion(v1)
+        val parts2 = parseVersion(v2)
+        val maxLength = maxOf(parts1.size, parts2.size)
+        for (i in 0 until maxLength) {
+            val p1 = parts1.getOrElse(i) { 0 }
+            val p2 = parts2.getOrElse(i) { 0 }
+            if (p1 != p2) return p1.compareTo(p2)
+        }
+        return 0
+    }
+
     override suspend fun doWork(): Result {
         val dataStore = DataStoreManager(applicationContext)
         
@@ -20,7 +39,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             return Result.success()
         }
 
-        val projectsToCheck = listOf(
+        val defaultProjects = listOf(
             ProjectInfo("Betaflight", "betaflight", "betaflight", "https://avatars.githubusercontent.com/u/19597933?s=200&v=4"),
             ProjectInfo("INAV", "iNavFlight", "inav", "https://avatars.githubusercontent.com/u/15979895?s=200&v=4"),
             ProjectInfo("Gyroflow", "gyroflow", "gyroflow", "https://avatars.githubusercontent.com/u/94141432?s=200&v=4"),
@@ -31,15 +50,32 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             ProjectInfo("EdgeTX", "EdgeTX", "edgetx", "https://avatars.githubusercontent.com/u/83762968?s=200&v=4")
         )
 
+        val userProjects = dataStore.getUserRepos().first()
+        val projectsToCheck = defaultProjects + userProjects
+
         createNotificationChannel()
 
         projectsToCheck.forEach { project ->
             try {
                 val releases = RetrofitInstance.api.getAllReleases(project.owner, project.repo)
-                
-                // Vérification Stable
-                var stable = releases.firstOrNull { !it.prerelease }
+                val sortedByDate = releases.sortedByDescending { it.publishedAt ?: "" }
+
+                // Recherche SemVer (numéro le plus haut)
+                var stable = releases
+                    .filter { !it.prerelease && !it.tagName.startsWith("untagged-") }
+                    .maxWithOrNull { a, b -> compareVersions(a.tagName, b.tagName) }
+
                 if (stable == null) {
+                    try {
+                        stable = RetrofitInstance.api.getLatestRelease(project.owner, project.repo)
+                    } catch (_: Exception) {}
+                }
+
+                if (stable == null) {
+                    stable = sortedByDate.firstOrNull { !it.prerelease }
+                }
+
+                if (stable == null || stable.tagName.startsWith("untagged-")) {
                     val tags = RetrofitInstance.api.getTags(project.owner, project.repo)
                     if (tags.isNotEmpty()) {
                         val latestTag = tags[0]
@@ -61,7 +97,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 }
 
                 // Vérification Beta
-                val beta = releases.firstOrNull { it.prerelease }
+                val beta = sortedByDate.firstOrNull { it.prerelease }
                 if (beta != null) {
                     val lastKnownBeta = dataStore.getVersion("${project.repo}_beta")
                     if (lastKnownBeta != null && lastKnownBeta != beta.tagName) {

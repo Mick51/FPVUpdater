@@ -16,4 +16,10 @@
     <string name="network_error">Network error</string>
     <string name="stable_label">Stable</string>
     <string name="beta_label">Beta</string>
+    <string name="add_repo_title">Add Repository</string>
+    <string name="repo_name_hint">Project Name</string>
+    <string name="repo_owner_hint">GitHub Owner</string>
+    <string name="repo_name_id_hint">Repository Name</string>
+    <string name="add_btn">Add</string>
+    <string name="delete_repo_desc">Delete repository</string>
 </resources>

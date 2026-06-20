@@ -24,8 +24,11 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
@@ -40,7 +43,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -94,7 +96,8 @@ fun AppNavigation(viewModel: MainViewModel) {
         composable("main") { 
             MainScreen(
                 viewModel = viewModel, 
-                onNavigateToSettings = { navController.navigate("settings") }
+                onNavigateToSettings = { navController.navigate("settings") },
+                onNavigateToAddRepo = { navController.navigate("add_repo") }
             ) 
         }
         composable("settings") { 
@@ -103,6 +106,12 @@ fun AppNavigation(viewModel: MainViewModel) {
                 onNavigateBack = { navController.popBackStack() }
             ) 
         }
+        composable("add_repo") {
+            AddRepoScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
     }
 }
 
@@ -110,8 +119,10 @@ fun AppNavigation(viewModel: MainViewModel) {
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToAddRepo: () -> Unit
 ) {
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -131,70 +142,25 @@ fun MainScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToAddRepo) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add_repo_title))
+                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(id = R.string.settings_title))
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { viewModel.refreshData(context) }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Rafraîchir")
+            }
         }
     ) { innerPadding ->
         MainContent(
             modifier = Modifier.padding(innerPadding),
             viewModel = viewModel
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsScreen(
-    viewModel: MainViewModel,
-    onNavigateBack: () -> Unit
-) {
-    val context = LocalContext.current
-    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState(initial = true)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(id = R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).padding(16.dp)) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(stringResource(id = R.string.notifications_label), style = MaterialTheme.typography.bodyLarge)
-                        Spacer(Modifier.weight(1f))
-                        Switch(
-                            checked = notificationsEnabled,
-                            onCheckedChange = { viewModel.toggleNotifications(it, context) }
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "Vérifie les nouvelles versions en arrière-plan et envoie une notification.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -233,7 +199,10 @@ fun MainContent(
                 items(items = sortedProjects, key = { it.name }) { project ->
                     ProjectCard(
                         project = project,
-                        onOpenUrl = { url -> openUrl(context, url) }
+                        onOpenUrl = { url -> openUrl(context, url) },
+                        onDelete = if (project.isUserAdded) { 
+                            { viewModel.removeUserRepository(project) } 
+                        } else null
                     )
                 }
             }
@@ -243,12 +212,15 @@ fun MainContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectCard(project: ProjectInfo, onOpenUrl: (String) -> Unit) {
+fun ProjectCard(
+    project: ProjectInfo, 
+    onOpenUrl: (String) -> Unit,
+    onDelete: (() -> Unit)? = null
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { 
-                // Optimisation du rendu matériel
                 clip = true
                 shape = RoundedCornerShape(16.dp)
             },
@@ -258,81 +230,94 @@ fun ProjectCard(project: ProjectInfo, onOpenUrl: (String) -> Unit) {
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Logo du projet
-            AsyncImage(
-                model = project.iconUrl,
-                contentDescription = "${project.name} logo",
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = project.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    // Version Stable
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(id = R.string.stable_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                        AssistChip(
-                            onClick = { if (project.stableUrl.isNotEmpty()) onOpenUrl(project.stableUrl) },
-                            label = { 
-                                Text(
-                                    text = project.stableVersion,
-                                    color = if (project.stableUrl.isNotEmpty()) Color(0xFF4CAF50) else Color.Unspecified
-                                ) 
-                            },
-                            leadingIcon = { 
-                                Icon(
-                                    Icons.Default.CheckCircle, 
-                                    contentDescription = null,
-                                    tint = if (project.stableUrl.isNotEmpty()) Color(0xFF4CAF50) else Color.Gray
-                                ) 
-                            },
-                            enabled = project.stableUrl.isNotEmpty()
+        Column {
+            if (onDelete != null) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Default.Delete, 
+                            contentDescription = stringResource(id = R.string.delete_repo_desc),
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
+                }
+            }
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Logo du projet
+                AsyncImage(
+                    model = project.iconUrl,
+                    contentDescription = "${project.name} logo",
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = project.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
                     
-                    // Version Beta
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(id = R.string.beta_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                        AssistChip(
-                            onClick = { if (project.betaUrl.isNotEmpty()) onOpenUrl(project.betaUrl) },
-                            label = { 
-                                Text(
-                                    text = project.betaVersion,
-                                    color = if (project.betaUrl.isNotEmpty()) Color(0xFFFF9800) else Color.Unspecified
-                                ) 
-                            },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else MaterialTheme.colorScheme.secondaryContainer
-                            ),
-                            leadingIcon = { 
-                                Icon(
-                                    Icons.Default.Warning, 
-                                    contentDescription = null,
-                                    tint = if (project.betaUrl.isNotEmpty()) Color(0xFFFF9800) else Color.Gray
-                                ) 
-                            },
-                            enabled = project.betaUrl.isNotEmpty()
-                        )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Version Stable
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(stringResource(id = R.string.stable_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            AssistChip(
+                                onClick = { if (project.stableUrl.isNotEmpty()) onOpenUrl(project.stableUrl) },
+                                label = { 
+                                    Text(
+                                        text = project.stableVersion,
+                                        color = if (project.stableUrl.isNotEmpty()) Color(0xFF4CAF50) else Color.Unspecified
+                                    ) 
+                                },
+                                leadingIcon = { 
+                                    Icon(
+                                        Icons.Default.CheckCircle, 
+                                        contentDescription = null,
+                                        tint = if (project.stableUrl.isNotEmpty()) Color(0xFF4CAF50) else Color.Gray
+                                    ) 
+                                },
+                                enabled = project.stableUrl.isNotEmpty()
+                            )
+                        }
+                        
+                        // Version Beta
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(stringResource(id = R.string.beta_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            AssistChip(
+                                onClick = { if (project.betaUrl.isNotEmpty()) onOpenUrl(project.betaUrl) },
+                                label = { 
+                                    Text(
+                                        text = project.betaVersion,
+                                        color = if (project.betaUrl.isNotEmpty()) Color(0xFFFF9800) else Color.Unspecified
+                                    ) 
+                                },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else MaterialTheme.colorScheme.secondaryContainer
+                                ),
+                                leadingIcon = { 
+                                    Icon(
+                                        Icons.Default.Warning, 
+                                        contentDescription = null,
+                                        tint = if (project.betaUrl.isNotEmpty()) Color(0xFFFF9800) else Color.Gray
+                                    ) 
+                                },
+                                enabled = project.betaUrl.isNotEmpty()
+                            )
+                        }
                     }
                 }
             }
@@ -402,7 +387,8 @@ data class ProjectInfo(
     val stableVersion: String = "Loading...",
     val stableUrl: String = "",
     val betaVersion: String = "Loading...",
-    val betaUrl: String = ""
+    val betaUrl: String = "",
+    val isUserAdded: Boolean = false
 )
 
 @Preview(showBackground = true)

@@ -5,6 +5,14 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Lecture du token GitHub depuis local.properties
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { properties.load(it) }
+}
+val githubToken = properties.getProperty("GITHUB_TOKEN") ?: ""
+
 android {
     namespace = "com.example.fpvupdater"
     compileSdk = 37
@@ -18,18 +26,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Lecture du token GitHub depuis local.properties
-        val properties = Properties()
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localPropertiesFile.inputStream().use { properties.load(it) }
-        }
-        val githubToken = properties.getProperty("GITHUB_TOKEN") ?: ""
         buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
+        }
         release {
+            buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
             optimization {
                 enable = false
             }

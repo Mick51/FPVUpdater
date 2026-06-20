@@ -16,4 +16,10 @@
     <string name="network_error">Erreur réseau</string>
     <string name="stable_label">Stable</string>
     <string name="beta_label">Beta</string>
+    <string name="add_repo_title">Ajouter un dépôt</string>
+    <string name="repo_name_hint">Nom du projet</string>
+    <string name="repo_owner_hint">Propriétaire GitHub</string>
+    <string name="repo_name_id_hint">Nom du dépôt (Repository)</string>
+    <string name="add_btn">Ajouter</string>
+    <string name="delete_repo_desc">Supprimer ce dépôt</string>
 </resources>

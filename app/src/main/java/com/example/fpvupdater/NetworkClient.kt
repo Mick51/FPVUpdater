@@ -24,7 +24,7 @@ class AuthInterceptor(private val token: String) : Interceptor {
 }
 
 object RetrofitInstance {
-    private val client = OkHttpClient.Builder()
+    val client = OkHttpClient.Builder()
         .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.SECONDS)
