@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
@@ -61,7 +62,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 val sortedByDate = releases.sortedByDescending { it.publishedAt ?: "" }
 
                 // Recherche SemVer (numéro le plus haut)
-                var stable = releases
+                var stable: ReleaseResponse? = releases
                     .filter { !it.prerelease && !it.tagName.startsWith("untagged-") }
                     .maxWithOrNull { a, b -> compareVersions(a.tagName, b.tagName) }
 
@@ -89,26 +90,34 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 }
 
                 if (stable != null) {
+                    val currentStable = stable!!
                     val lastKnownStable = dataStore.getVersion("${project.repo}_stable")
-                    if (lastKnownStable != null && lastKnownStable != stable.tagName) {
-                        sendNotification("${project.name} (Stable)", stable.tagName)
-                        dataStore.saveVersion("${project.repo}_stable", stable.tagName)
+                    if (lastKnownStable != null && lastKnownStable != currentStable.tagName && isNewVersionAvailable(lastKnownStable, currentStable.tagName)) {
+                        sendNotification("${project.name} (Stable)", currentStable.tagName)
                     }
+                    dataStore.saveVersion("${project.repo}_stable", currentStable.tagName)
                 }
 
                 // Vérification Beta
                 val beta = sortedByDate.firstOrNull { it.prerelease }
                 if (beta != null) {
                     val lastKnownBeta = dataStore.getVersion("${project.repo}_beta")
-                    if (lastKnownBeta != null && lastKnownBeta != beta.tagName) {
+                    if (lastKnownBeta != null && lastKnownBeta != beta.tagName && isNewVersionAvailable(lastKnownBeta, beta.tagName)) {
                         sendNotification("${project.name} (Beta)", beta.tagName)
-                        dataStore.saveVersion("${project.repo}_beta", beta.tagName)
                     }
+                    dataStore.saveVersion("${project.repo}_beta", beta.tagName)
                 }
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.e("UpdateWorker", "Erreur lors du check pour ${project.name}: ${e.message}")
+            }
         }
 
         return Result.success()
+    }
+
+    private fun isNewVersionAvailable(local: String, online: String): Boolean {
+        val ignoredValues = listOf("Chargement...", "Loading...", "Aucune version", "No version", "Erreur réseau", "Network error")
+        return !ignoredValues.contains(local) && local != online
     }
 
     private fun sendNotification(projectName: String, version: String) {
