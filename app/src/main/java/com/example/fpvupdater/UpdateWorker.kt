@@ -9,7 +9,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import androidx.work.ListenableWorker.Result
 import kotlinx.coroutines.flow.first
 
 class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -90,7 +89,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 }
 
                 if (stable != null) {
-                    val currentStable = stable!!
+                    val currentStable = stable
                     val lastKnownStable = dataStore.getVersion("${project.repo}_stable")
                     if (lastKnownStable != null && lastKnownStable != currentStable.tagName && isNewVersionAvailable(lastKnownStable, currentStable.tagName)) {
                         sendNotification("${project.name} (Stable)", currentStable.tagName)
