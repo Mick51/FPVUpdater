@@ -34,6 +34,7 @@ class DataStoreManager(private val context: Context) {
     companion object {
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val USER_REPOS = stringPreferencesKey("user_repos")
+        val THEME_MODE = stringPreferencesKey("theme_mode") // "dark", "light", "system"
     }
 
     private val gson = Gson()
@@ -68,6 +69,13 @@ class DataStoreManager(private val context: Context) {
         val preferences = context.dataStore.data.first()
         return preferences[key]
     }
+
+    suspend fun setThemeMode(mode: String) {
+        context.dataStore.edit { it[THEME_MODE] = mode }
+    }
+
+    val themeMode: Flow<String> = context.dataStore.data
+        .map { it[THEME_MODE] ?: "dark" }
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { it[NOTIFICATIONS_ENABLED] = enabled }

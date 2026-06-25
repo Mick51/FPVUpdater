@@ -19,7 +19,7 @@ package com.example.fpvupdater.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // FPV Tech Palette
-val FpvCyan = Color(0xFF00E5FF)
+val FpvBlue = Color(0xFF1976D2) // Bleu classique
 val FpvOrange = Color(0xFFFF3D00)
 val FpvDarkGrey = Color(0xFF1A1B1E)
 val FpvBlack = Color(0xFF121212)
@@ -27,8 +27,6 @@ val FpvSurface = Color(0xFF25262B)
 val FpvTextPrimary = Color(0xFFFFFFFF)
 val FpvTextSecondary = Color(0xFFB0B0B0)
 
-// Fallback legacy colors
-val PrimaryBlue = Color(0xFF007AFF)
-val SecondaryOrange = Color(0xFFFF9500)
-val SurfaceDark = Color(0xFF1C1C1E)
-val BackgroundDark = Color(0xFF000000)
+// Semantic colors for versions
+val VersionStable = Color(0xFF4CAF50)
+val VersionBeta = Color(0xFFFF9800)

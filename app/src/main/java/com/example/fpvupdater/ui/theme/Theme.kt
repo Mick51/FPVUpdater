@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColors = darkColorScheme(
-    primary = FpvCyan,
+    primary = FpvBlue,
     onPrimary = Color.Black,
     secondary = FpvOrange,
     onSecondary = Color.White,
@@ -39,11 +39,11 @@ private val DarkColors = darkColorScheme(
     surfaceVariant = FpvSurface,
     onSurfaceVariant = FpvTextSecondary,
     error = Color(0xFFFF5252),
-    outline = FpvCyan.copy(alpha = 0.5f)
+    outline = FpvBlue.copy(alpha = 0.5f)
 )
 
 private val LightColors = lightColorScheme(
-    primary = FpvCyan,
+    primary = Color(0xFF1976D2), // Bleu classique forcé pour le mode clair
     onPrimary = Color.Black,
     secondary = FpvOrange,
     onSecondary = Color.White,
@@ -57,16 +57,23 @@ private val LightColors = lightColorScheme(
 
 @Composable
 fun FPVUpdaterTheme(
+    themeMode: String = "dark",
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val isDark = when (themeMode) {
+        "dark" -> true
+        "light" -> false
+        else -> darkTheme
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColors
+        isDark -> DarkColors
         else -> LightColors
     }
 

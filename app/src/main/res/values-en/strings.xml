@@ -22,4 +22,8 @@
     <string name="repo_name_id_hint">Repository Name</string>
     <string name="add_btn">Add</string>
     <string name="delete_repo_desc">Delete repository</string>
+    <string name="theme_section_title">Appearance</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_system">System</string>
 </resources>

@@ -70,6 +70,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.work.*
 import coil.compose.AsyncImage
 import com.example.fpvupdater.ui.theme.FPVUpdaterTheme
+import com.example.fpvupdater.ui.theme.VersionBeta
+import com.example.fpvupdater.ui.theme.VersionStable
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
@@ -80,18 +82,19 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel(this)
         
         setContent {
-            FPVUpdaterTheme {
-                NotificationPermissionHandler()
-                
-                val dataStoreManager = remember { DataStoreManager(this) }
-                val viewModel: MainViewModel = viewModel(
-                    factory = object : ViewModelProvider.Factory {
-                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                            @Suppress("UNCHECKED_CAST")
-                            return MainViewModel(dataStoreManager) as T
-                        }
+            val dataStoreManager = remember { DataStoreManager(this) }
+            val viewModel: MainViewModel = viewModel(
+                factory = object : ViewModelProvider.Factory {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        @Suppress("UNCHECKED_CAST")
+                        return MainViewModel(dataStoreManager) as T
                     }
-                )
+                }
+            )
+            val themeMode by viewModel.themeMode.collectAsState(initial = "dark")
+
+            FPVUpdaterTheme(themeMode = themeMode) {
+                NotificationPermissionHandler()
 
                 LaunchedEffect(Unit) {
                     viewModel.refreshData(this@MainActivity)
@@ -294,14 +297,14 @@ fun ProjectCard(
                                 label = { 
                                     Text(
                                         text = project.stableVersion,
-                                        color = if (project.stableUrl.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (project.stableUrl.isNotEmpty()) VersionStable else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 leadingIcon = { 
                                     Icon(
                                         Icons.Default.CheckCircle, 
                                         contentDescription = null,
-                                        tint = if (project.stableUrl.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = if (project.stableUrl.isNotEmpty()) VersionStable else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 enabled = project.stableUrl.isNotEmpty()
@@ -316,17 +319,17 @@ fun ProjectCard(
                                 label = { 
                                     Text(
                                         text = project.betaVersion,
-                                        color = if (project.betaUrl.isNotEmpty()) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (project.betaUrl.isNotEmpty()) VersionBeta else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.1f)
+                                    containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else VersionBeta.copy(alpha = 0.1f)
                                 ),
                                 leadingIcon = { 
                                     Icon(
                                         Icons.Default.Warning, 
                                         contentDescription = null,
-                                        tint = if (project.betaUrl.isNotEmpty()) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = if (project.betaUrl.isNotEmpty()) VersionBeta else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 enabled = project.betaUrl.isNotEmpty()

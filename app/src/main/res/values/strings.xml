@@ -22,4 +22,8 @@
     <string name="repo_name_id_hint">Nom du dépôt (Repository)</string>
     <string name="add_btn">Ajouter</string>
     <string name="delete_repo_desc">Supprimer ce dépôt</string>
+    <string name="theme_section_title">Apparence</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_system">Système</string>
 </resources>

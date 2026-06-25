@@ -69,6 +69,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     val notificationsEnabled = dataStoreManager.isNotificationsEnabled
+    val themeMode = dataStoreManager.themeMode
 
     init {
         Log.d("API_DEBUG", "Token chargé : ${BuildConfig.GITHUB_TOKEN.take(10)}...")
@@ -290,6 +291,12 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
             val notificationManager: android.app.NotificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch {
+            dataStoreManager.setThemeMode(mode)
         }
     }
 
