@@ -51,7 +51,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -88,7 +87,7 @@ class MainActivity : ComponentActivity() {
                         @Suppress("UNCHECKED_CAST")
                         return MainViewModel(dataStoreManager) as T
                     }
-                }
+                },
             )
             val themeMode by viewModel.themeMode.collectAsState(initial = "dark")
 
@@ -119,14 +118,12 @@ fun AppNavigation(viewModel: MainViewModel) {
         composable("settings") { 
             SettingsScreen(
                 viewModel = viewModel, 
-                onNavigateBack = { navController.popBackStack() },
-            ) 
+            ) { navController.popBackStack() }
         }
         composable("add_repo") {
             AddRepoScreen(
                 viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
+            ) { navController.popBackStack() }
         }
     }
 }
@@ -136,7 +133,7 @@ fun AppNavigation(viewModel: MainViewModel) {
 fun MainScreen(
     viewModel: MainViewModel,
     onNavigateToSettings: () -> Unit,
-    onNavigateToAddRepo: () -> Unit
+    onNavigateToAddRepo: () -> Unit,
 ) {
     val context = LocalContext.current
     Scaffold(
@@ -148,13 +145,13 @@ fun MainScreen(
                         Image(
                             painter = painterResource(id = R.drawable.ic_app_logo),
                             contentDescription = "App Logo",
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = "FPV Updater",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 },
@@ -165,18 +162,18 @@ fun MainScreen(
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(id = R.string.settings_title))
                     }
-                }
+                },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { viewModel.refreshData(context) }) {
                 Icon(Icons.Default.Refresh, contentDescription = "Rafraîchir")
             }
-        }
+        },
     ) { innerPadding ->
         MainContent(
             modifier = Modifier.padding(innerPadding),
-            viewModel = viewModel
+            viewModel = viewModel,
         )
     }
 }
@@ -340,8 +337,7 @@ fun NotificationPermissionHandler() {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-        onResult = { }
-    )
+    ) { }
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
