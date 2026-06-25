@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -75,31 +76,38 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         Log.d("API_DEBUG", "Token chargé : ${BuildConfig.GITHUB_TOKEN.take(10)}...")
         
         viewModelScope.launch {
-            dataStoreManager.getUserRepos().collect { userRepos ->
+            dataStoreManager.getUserRepos().distinctUntilChanged().collect { userRepos ->
                 // On s'assure que les icônes sont présentes
                 val updatedUserRepos = userRepos.map { repo ->
                     if (repo.iconUrl.isEmpty()) {
                         repo.copy(iconUrl = "https://github.com/${repo.owner}.png")
                     } else repo
                 }
-                _userProjects.value = updatedUserRepos
-                // On charge les versions locales pour les nouveaux projets
-                loadLocalDataFor(defaultProjects + updatedUserRepos)
+                if (_userProjects.value != updatedUserRepos) {
+                    _userProjects.value = updatedUserRepos
+                    // On charge les versions locales pour les nouveaux projets
+                    loadLocalDataFor(defaultProjects + updatedUserRepos)
+                }
             }
         }
     }
 
     private suspend fun loadLocalDataFor(projectList: List<ProjectInfo>) {
         val currentData = _projectData.value.toMutableMap()
+        val allPrefs = dataStoreManager.getAllPreferences()
+        var changed = false
         projectList.forEach { project ->
             val key = "${project.owner}/${project.repo}"
             if (!currentData.containsKey(key)) {
-                val localStable = dataStoreManager.getVersion("${project.repo}_stable") ?: "Loading..."
-                val localBeta = dataStoreManager.getVersion("${project.repo}_beta") ?: "Loading..."
+                val localStable = allPrefs["${project.repo}_stable"] ?: "Loading..."
+                val localBeta = allPrefs["${project.repo}_beta"] ?: "Loading..."
                 currentData[key] = project.copy(stableVersion = localStable, betaVersion = localBeta)
+                changed = true
             }
         }
-        _projectData.value = currentData
+        if (changed) {
+            _projectData.value = currentData
+        }
     }
 
     fun addUserRepository(name: String, owner: String, repo: String) {
@@ -224,19 +232,23 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                             val localBeta = dataStoreManager.getVersion("${project.repo}_beta")
 
                             if (stableResult != null) {
-                                if (context != null && localStable != null && isNewVersionAvailable(localStable, stableResult.tagName)) {
-                                    createNotificationChannel(context)
-                                    sendNotification(context, "${project.name} (Stable)", stableResult.tagName)
+                                if (localStable != stableResult.tagName) {
+                                    if (context != null && localStable != null && isNewVersionAvailable(localStable, stableResult.tagName)) {
+                                        createNotificationChannel(context)
+                                        sendNotification(context, "${project.name} (Stable)", stableResult.tagName)
+                                    }
+                                    dataStoreManager.saveVersion("${project.repo}_stable", stableResult.tagName)
                                 }
-                                dataStoreManager.saveVersion("${project.repo}_stable", stableResult.tagName)
                             }
                             
                             if (beta != null) {
-                                if (context != null && localBeta != null && isNewVersionAvailable(localBeta, beta.tagName)) {
-                                    createNotificationChannel(context)
-                                    sendNotification(context, "${project.name} (Beta)", beta.tagName)
+                                if (localBeta != beta.tagName) {
+                                    if (context != null && localBeta != null && isNewVersionAvailable(localBeta, beta.tagName)) {
+                                        createNotificationChannel(context)
+                                        sendNotification(context, "${project.name} (Beta)", beta.tagName)
+                                    }
+                                    dataStoreManager.saveVersion("${project.repo}_beta", beta.tagName)
                                 }
-                                dataStoreManager.saveVersion("${project.repo}_beta", beta.tagName)
                             }
 
                             val key = "${project.owner}/${project.repo}"

@@ -41,8 +41,9 @@ class AuthInterceptor(private val token: String) : Interceptor {
 object RetrofitInstance {
     val client = OkHttpClient.Builder()
         .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
-        .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(5, TimeUnit.SECONDS)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .addInterceptor(AuthInterceptor(BuildConfig.GITHUB_TOKEN))
         .build()
 

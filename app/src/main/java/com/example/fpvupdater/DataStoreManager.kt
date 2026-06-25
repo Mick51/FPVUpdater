@@ -24,6 +24,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -63,11 +64,16 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // Lire une version
+    // Lire une version spécifique
     suspend fun getVersion(repo: String): String? {
         val key = stringPreferencesKey(repo)
         val preferences = context.dataStore.data.first()
         return preferences[key]
+    }
+
+    // Lire toutes les préférences d'un coup (optimisation)
+    suspend fun getAllPreferences(): Map<String, String> {
+        return context.dataStore.data.first().asMap().mapKeys { it.key.name }.mapValues { it.value.toString() }
     }
 
     suspend fun setThemeMode(mode: String) {
@@ -76,6 +82,7 @@ class DataStoreManager(private val context: Context) {
 
     val themeMode: Flow<String> = context.dataStore.data
         .map { it[THEME_MODE] ?: "dark" }
+        .distinctUntilChanged()
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { it[NOTIFICATIONS_ENABLED] = enabled }
@@ -83,4 +90,5 @@ class DataStoreManager(private val context: Context) {
 
     val isNotificationsEnabled: Flow<Boolean> = context.dataStore.data
         .map { it[NOTIFICATIONS_ENABLED] ?: true }
+        .distinctUntilChanged()
 }

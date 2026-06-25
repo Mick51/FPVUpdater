@@ -16,6 +16,8 @@
 
 package com.example.fpvupdater
 
+import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 
 @Composable
 fun RepoForm(
@@ -79,7 +82,7 @@ fun RepoForm(
             Text(
                 text = "Détecté : $owner / $repo",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -141,140 +144,201 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
                 .fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Section Notifications
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(stringResource(id = R.string.notifications_label), style = MaterialTheme.typography.bodyLarge)
-                        Spacer(Modifier.weight(1f))
-                        Switch(
-                            checked = notificationsEnabled,
-                            onCheckedChange = { viewModel.toggleNotifications(it, context) }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(stringResource(id = R.string.notifications_label), style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.weight(1f))
+                            Switch(
+                                checked = notificationsEnabled,
+                                onCheckedChange = { viewModel.toggleNotifications(it, context) }
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "Vérifie les nouvelles versions en arrière-plan et envoie une notification.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "Vérifie les nouvelles versions en arrière-plan et envoie une notification.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
             // Section Thème
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = stringResource(id = R.string.theme_section_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
-                    Spacer(Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        listOf(
-                            "dark" to R.string.theme_dark,
-                            "light" to R.string.theme_light,
-                            "system" to R.string.theme_system
-                        ).forEach { (mode, labelRes) ->
-                            FilterChip(
-                                selected = themeMode == mode,
-                                onClick = { viewModel.setThemeMode(mode) },
-                                label = { Text(stringResource(id = labelRes)) },
-                                leadingIcon = if (themeMode == mode) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                } else null,
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.theme_section_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            listOf(
+                                "dark" to R.string.theme_dark,
+                                "light" to R.string.theme_light,
+                                "system" to R.string.theme_system
+                            ).forEach { (mode, labelRes) ->
+                                FilterChip(
+                                    selected = themeMode == mode,
+                                    onClick = { viewModel.setThemeMode(mode) },
+                                    label = { Text(stringResource(id = labelRes)) },
+                                    leadingIcon = if (themeMode == mode) {
+                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
             }
 
-            HorizontalDivider()
+            item { HorizontalDivider() }
 
-            Text(
-                text = "Ajouter un dépôt via URL",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            item {
+                Text(
+                    text = "Ajouter un dépôt via URL",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
-            RepoForm { n, o, r -> viewModel.addUserRepository(n, o, r) }
+            item {
+                RepoForm { n, o, r -> viewModel.addUserRepository(n, o, r) }
+            }
 
-            HorizontalDivider()
+            item { HorizontalDivider() }
 
-            Text(
-                text = "Dépôts enregistrés",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            item {
+                Text(
+                    text = "Dépôts enregistrés",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             if (userProjects.isEmpty()) {
-                Text(
-                    text = "Aucun dépôt personnalisé ajouté.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                item {
+                    Text(
+                        text = "Aucun dépôt personnalisé ajouté.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                items(userProjects) { project ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        ListItem(
+                            headlineContent = { Text(project.name, fontWeight = FontWeight.SemiBold) },
+                            supportingContent = { Text("${project.owner}/${project.repo}") },
+                            trailingContent = {
+                                IconButton(onClick = { viewModel.removeUserRepository(project) }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = stringResource(id = R.string.delete_repo_desc),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                    }
+                }
+            }
+
+            item { HorizontalDivider() }
+
+            // Section À Propos
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
-                    items(userProjects) { project ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.about_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        
+                        AboutRow(label = stringResource(id = R.string.author_label), value = "Mick")
+                        AboutRow(
+                            label = stringResource(id = R.string.contact_label),
+                            value = "naudclick.informatik@gmail.com"
                         ) {
-                            ListItem(
-                                headlineContent = { Text(project.name, fontWeight = FontWeight.SemiBold) },
-                                supportingContent = { Text("${project.owner}/${project.repo}") },
-                                trailingContent = {
-                                    IconButton(onClick = { viewModel.removeUserRepository(project) }) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = stringResource(id = R.string.delete_repo_desc),
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                },
-                                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
-                            )
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = "mailto:naudclick.informatik@gmail.com".toUri()
+                            }
+                            context.startActivity(intent)
                         }
+                        AboutRow(label = stringResource(id = R.string.version_label), value = BuildConfig.VERSION_NAME)
+                        AboutRow(label = stringResource(id = R.string.license_label), value = "GNU GPL v3")
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AboutRow(label: String, value: String, onClick: (() -> Unit)? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = if (onClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            modifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
+        )
     }
 }
 

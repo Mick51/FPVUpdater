@@ -26,4 +26,8 @@
     <string name="theme_dark">Sombre</string>
     <string name="theme_light">Clair</string>
     <string name="theme_system">Système</string>
+    <string name="about_title">À Propos</string>
+    <string name="author_label">Auteur</string>
+    <string name="license_label">Licence</string>
+    <string name="contact_label">Contact</string>
 </resources>

@@ -30,7 +30,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -141,6 +140,7 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -207,9 +207,7 @@ fun MainContent(
                 )
             }
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .animateContentSize(),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -235,12 +233,7 @@ fun ProjectCard(
     onDelete: (() -> Unit)? = null
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { 
-                clip = true
-                shape = RoundedCornerShape(16.dp)
-            },
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
