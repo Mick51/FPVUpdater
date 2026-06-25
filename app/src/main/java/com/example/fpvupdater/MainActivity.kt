@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2026 Mick
+ *
+ * Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le modifier
+ * selon les termes de la Licence Publique Générale GNU telle que publiée par
+ * la Free Software Foundation, soit la version 3 de la licence, ou (au choix)
+ * toute version ultérieure.
+ *
+ * Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE ;
+ * sans même la garantie implicite de COMMERCIALISATION ou D'ADÉQUATION À UN USAGE PARTICULIER.
+ * Voir la Licence Publique Générale GNU pour plus de détails.
+ *
+ * Vous devriez avoir reçu une copie de la Licence Publique Générale GNU avec ce programme.
+ * Sinon, voir <https://www.gnu.org/licenses/>.
+ */
+
 package com.example.fpvupdater
 
 import android.Manifest
@@ -274,20 +290,20 @@ fun ProjectCard(
                     ) {
                         // Version Stable
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(id = R.string.stable_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(stringResource(id = R.string.stable_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             AssistChip(
                                 onClick = { if (project.stableUrl.isNotEmpty()) onOpenUrl(project.stableUrl) },
                                 label = { 
                                     Text(
                                         text = project.stableVersion,
-                                        color = if (project.stableUrl.isNotEmpty()) Color(0xFF4CAF50) else Color.Unspecified
+                                        color = if (project.stableUrl.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 leadingIcon = { 
                                     Icon(
                                         Icons.Default.CheckCircle, 
                                         contentDescription = null,
-                                        tint = if (project.stableUrl.isNotEmpty()) Color(0xFF4CAF50) else Color.Gray
+                                        tint = if (project.stableUrl.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 enabled = project.stableUrl.isNotEmpty()
@@ -296,23 +312,23 @@ fun ProjectCard(
                         
                         // Version Beta
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(id = R.string.beta_label), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(stringResource(id = R.string.beta_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             AssistChip(
                                 onClick = { if (project.betaUrl.isNotEmpty()) onOpenUrl(project.betaUrl) },
                                 label = { 
                                     Text(
                                         text = project.betaVersion,
-                                        color = if (project.betaUrl.isNotEmpty()) Color(0xFFFF9800) else Color.Unspecified
+                                        color = if (project.betaUrl.isNotEmpty()) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else MaterialTheme.colorScheme.secondaryContainer
+                                    containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.1f)
                                 ),
                                 leadingIcon = { 
                                     Icon(
                                         Icons.Default.Warning, 
                                         contentDescription = null,
-                                        tint = if (project.betaUrl.isNotEmpty()) Color(0xFFFF9800) else Color.Gray
+                                        tint = if (project.betaUrl.isNotEmpty()) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
                                     ) 
                                 },
                                 enabled = project.betaUrl.isNotEmpty()

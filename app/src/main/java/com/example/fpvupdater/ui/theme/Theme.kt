@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2026 Mick
+ *
+ * Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le modifier
+ * selon les termes de la Licence Publique Générale GNU telle que publiée par
+ * la Free Software Foundation, soit la version 3 de la licence, ou (au choix)
+ * toute version ultérieure.
+ *
+ * Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS AUCUNE GARANTIE ;
+ * sans même la garantie implicite de COMMERCIALISATION ou D'ADÉQUATION À UN USAGE PARTICULIER.
+ * Voir la Licence Publique Générale GNU pour plus de détails.
+ *
+ * Vous devriez avoir reçu une copie de la Licence Publique Générale GNU avec ce programme.
+ * Sinon, voir <https://www.gnu.org/licenses/>.
+ */
+
 package com.example.fpvupdater.ui.theme
 
 import android.os.Build
@@ -12,27 +28,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColors = darkColorScheme(
-    primary = PrimaryBlue,
-    secondary = SecondaryOrange,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    onSurface = Color.White,
-    surfaceVariant = Color(0xFF2C2C2E)
+    primary = FpvCyan,
+    onPrimary = Color.Black,
+    secondary = FpvOrange,
+    onSecondary = Color.White,
+    background = FpvBlack,
+    onBackground = FpvTextPrimary,
+    surface = FpvDarkGrey,
+    onSurface = FpvTextPrimary,
+    surfaceVariant = FpvSurface,
+    onSurfaceVariant = FpvTextSecondary,
+    error = Color(0xFFFF5252),
+    outline = FpvCyan.copy(alpha = 0.5f)
 )
 
 private val LightColors = lightColorScheme(
-    primary = PrimaryBlue,
-    secondary = SecondaryOrange,
+    primary = FpvCyan,
+    onPrimary = Color.Black,
+    secondary = FpvOrange,
+    onSecondary = Color.White,
     background = Color.White,
-    surface = Color.White,
+    onBackground = Color.Black,
+    surface = Color(0xFFF5F5F5),
     onSurface = Color.Black,
-    surfaceVariant = Color(0xFFF2F2F7)
+    surfaceVariant = Color(0xFFE0E0E0),
+    onSurfaceVariant = Color.DarkGray
 )
 
 @Composable
 fun FPVUpdaterTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -41,7 +66,6 @@ fun FPVUpdaterTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColors
         else -> LightColors
     }
