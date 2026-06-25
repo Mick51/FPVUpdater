@@ -25,7 +25,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import androidx.work.ListenableWorker.Result
 import kotlinx.coroutines.flow.first
 
 class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -64,7 +63,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             ProjectInfo("Bluejay", "bird-sanctuary", "bluejay", "https://avatars.githubusercontent.com/u/110229629?s=200&v=4"),
             ProjectInfo("AM32", "am32-firmware", "AM32", "https://avatars.githubusercontent.com/u/155652001?s=200&v=4"),
             ProjectInfo("ExpressLRS", "ExpressLRS", "ExpressLRS", "https://avatars.githubusercontent.com/u/77287864?s=200&v=4"),
-            ProjectInfo("EdgeTX", "EdgeTX", "edgetx", "https://avatars.githubusercontent.com/u/83762968?s=200&v=4")
+            ProjectInfo("EdgeTX", "EdgeTX", "edgetx", "https://avatars.githubusercontent.com/u/83762968?s=200&v=4"),
         )
 
         val userProjects = dataStore.getUserRepos().first()
@@ -78,7 +77,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 val sortedByDate = releases.sortedByDescending { it.publishedAt ?: "" }
 
                 // Recherche SemVer (numéro le plus haut)
-                var stable: ReleaseResponse? = releases
+                var stable: ReleaseResponse? = releases.asSequence()
                     .filter { !it.prerelease && !it.tagName.startsWith("untagged-") }
                     .maxWithOrNull { a, b -> compareVersions(a.tagName, b.tagName) }
 
@@ -92,7 +91,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                     stable = sortedByDate.firstOrNull { !it.prerelease }
                 }
 
-                if (stable == null || stable.tagName.startsWith("untagged-")) {
+                if (stable == null || (stable.tagName.startsWith("untagged-"))) {
                     val tags = RetrofitInstance.api.getTags(project.owner, project.repo)
                     if (tags.isNotEmpty()) {
                         val latestTag = tags[0]

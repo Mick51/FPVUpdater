@@ -37,7 +37,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
 class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel() {
@@ -50,7 +49,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         ProjectInfo("Bluejay", "bird-sanctuary", "bluejay", "https://avatars.githubusercontent.com/u/110229629?s=200&v=4"),
         ProjectInfo("AM32", "am32-firmware", "AM32", "https://avatars.githubusercontent.com/u/155652001?s=200&v=4"),
         ProjectInfo("ExpressLRS", "ExpressLRS", "ExpressLRS", "https://avatars.githubusercontent.com/u/77287864?s=200&v=4"),
-        ProjectInfo("EdgeTX", "EdgeTX", "edgetx", "https://avatars.githubusercontent.com/u/83762968?s=200&v=4")
+        ProjectInfo("EdgeTX", "EdgeTX", "edgetx", "https://avatars.githubusercontent.com/u/83762968?s=200&v=4"),
     )
 
     private val _userProjects = MutableStateFlow<List<ProjectInfo>>(emptyList())
@@ -66,7 +65,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), defaultProjects)
 
-    private val _isRefreshing = MutableStateFlow(false)
+    private val _isRefreshing = MutableStateFlow(value = false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     val notificationsEnabled = dataStoreManager.isNotificationsEnabled
@@ -124,7 +123,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                 isUserAdded = true
             )
             val currentList = _userProjects.value.toMutableList()
-            if (!currentList.any { it.owner == finalOwner && it.repo == finalRepo }) {
+            if (!currentList.any { (it.owner == finalOwner) && (it.repo == finalRepo) }) {
                 currentList.add(newRepo)
                 dataStoreManager.saveUserRepos(currentList)
                 // Rafraîchir immédiatement après l'ajout
@@ -188,7 +187,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                             val sortedByDate = releases.sortedByDescending { it.publishedAt ?: "" }
 
                             // On cherche la version avec le numéro le plus élevé (SemVer)
-                            var stableResult = releases
+                            var stableResult = releases.asSequence()
                                 .filter { !it.prerelease && !it.tagName.startsWith("untagged-") }
                                 .maxWithOrNull { a, b -> compareVersions(a.tagName, b.tagName) }
                             

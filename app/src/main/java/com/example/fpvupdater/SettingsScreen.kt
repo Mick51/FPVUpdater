@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun RepoForm(
-    onAdd: (String, String, String) -> Unit
+    onAdd: (String, String, String) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
@@ -50,7 +50,7 @@ fun RepoForm(
             onValueChange = { name = it },
             label = { Text("Nom du projet (ex: Mon Drone)") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
         )
 
         OutlinedTextField(
@@ -71,7 +71,7 @@ fun RepoForm(
             placeholder = { Text("https://github.com/owner/repo") },
             leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
         )
 
         if (owner.isNotEmpty() && repo.isNotEmpty()) {
@@ -183,7 +183,7 @@ fun SettingsScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            RepoForm(onAdd = { n, o, r -> viewModel.addUserRepository(n, o, r) })
+            RepoForm { n, o, r -> viewModel.addUserRepository(n, o, r) }
 
             HorizontalDivider()
 
@@ -257,12 +257,12 @@ fun AddRepoScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(16.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(),
         ) {
-            RepoForm(onAdd = { n, o, r -> 
+            RepoForm { n, o, r -> 
                 viewModel.addUserRepository(n, o, r)
                 onNavigateBack()
-            })
+            }
         }
     }
 }

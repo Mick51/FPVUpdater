@@ -22,7 +22,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -38,7 +38,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
@@ -113,13 +112,12 @@ fun AppNavigation(viewModel: MainViewModel) {
             MainScreen(
                 viewModel = viewModel, 
                 onNavigateToSettings = { navController.navigate("settings") },
-                onNavigateToAddRepo = { navController.navigate("add_repo") }
-            ) 
+            ) { navController.navigate("add_repo") } 
         }
         composable("settings") { 
             SettingsScreen(
                 viewModel = viewModel, 
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
             ) 
         }
         composable("add_repo") {
@@ -369,7 +367,7 @@ fun scheduleUpdateCheck(context: Context) {
 
     WorkManager.getInstance(context).enqueueUniquePeriodicWork(
         "FPVUpdateCheck",
-        androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+        ExistingPeriodicWorkPolicy.KEEP,
         updateRequest
     )
 }
@@ -390,7 +388,7 @@ private fun createNotificationChannel(context: Context) {
 
 fun openUrl(context: Context, url: String) {
     if (url.isNotEmpty()) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         context.startActivity(intent)
     }
 }

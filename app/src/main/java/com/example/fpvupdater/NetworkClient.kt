@@ -23,7 +23,6 @@ import okhttp3.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-import com.example.fpvupdater.BuildConfig
 
 class AuthInterceptor(private val token: String) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -31,7 +30,7 @@ class AuthInterceptor(private val token: String) : Interceptor {
             .addHeader("User-Agent", "FPV-Updater-Test-2026") // Identifiant mis à jour pour éviter le blocage GitHub
 
         // On n'ajoute le token que s'il semble valide
-        if (token.isNotEmpty() && token != "null") {
+        if (token.isNotEmpty() && (token != "null")) {
             requestBuilder.addHeader("Authorization", "Bearer $token")
         }
 
