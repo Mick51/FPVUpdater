@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -131,6 +132,9 @@ fun SettingsScreen(
     val themeMode by viewModel.themeMode.collectAsState(initial = "dark")
     val projects by viewModel.projects.collectAsState()
     val userProjects = remember(projects) { projects.filter { it.isUserAdded } }
+    
+    val appUpdateInfo by viewModel.appUpdateInfo.collectAsState()
+    val isCheckingAppUpdate by viewModel.isCheckingAppUpdate.collectAsState()
 
     Scaffold(
         topBar = {
@@ -151,6 +155,114 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Section Mise à Jour
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.update_section_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(id = R.string.app_version_label),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "v${BuildConfig.VERSION_NAME}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            
+                            if (isCheckingAppUpdate) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                Button(onClick = { viewModel.checkForAppUpdate() }) {
+                                    Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(id = R.string.check_app_updates_btn))
+                                }
+                            }
+                        }
+                        
+                        if (appUpdateInfo != null) {
+                            Spacer(Modifier.height(12.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = stringResource(id = R.string.app_update_available),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Version ${appUpdateInfo?.tagName} disponible",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Button(
+                                        onClick = { openUrl(context, appUpdateInfo?.htmlUrl ?: "") },
+                                        modifier = Modifier.align(Alignment.End)
+                                    ) {
+                                        Text(stringResource(id = R.string.download_update_btn))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Section Aides
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.help_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        
+                        AboutRow(label = stringResource(id = R.string.author_label), value = "Mick")
+                        AboutRow(
+                            label = stringResource(id = R.string.contact_label),
+                            value = "naudclick.informatik@gmail.com"
+                        ) {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = "mailto:naudclick.informatik@gmail.com".toUri()
+                            }
+                            context.startActivity(intent)
+                        }
+                        AboutRow(label = stringResource(id = R.string.license_label), value = "GNU GPL v3")
+                    }
+                }
+            }
+
             // Section Notifications
             item {
                 Card(
@@ -281,41 +393,6 @@ fun SettingsScreen(
                             },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                         )
-                    }
-                }
-            }
-
-            item { HorizontalDivider() }
-
-            // Section À Propos
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stringResource(id = R.string.about_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        
-                        AboutRow(label = stringResource(id = R.string.author_label), value = "Mick")
-                        AboutRow(
-                            label = stringResource(id = R.string.contact_label),
-                            value = "naudclick.informatik@gmail.com"
-                        ) {
-                            val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = "mailto:naudclick.informatik@gmail.com".toUri()
-                            }
-                            context.startActivity(intent)
-                        }
-                        AboutRow(label = stringResource(id = R.string.version_label), value = BuildConfig.VERSION_NAME)
-                        AboutRow(label = stringResource(id = R.string.license_label), value = "GNU GPL v3")
                     }
                 }
             }

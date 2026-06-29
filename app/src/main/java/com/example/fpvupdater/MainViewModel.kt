@@ -69,6 +69,12 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     private val _isRefreshing = MutableStateFlow(value = false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val _appUpdateInfo = MutableStateFlow<ReleaseResponse?>(null)
+    val appUpdateInfo: StateFlow<ReleaseResponse?> = _appUpdateInfo.asStateFlow()
+
+    private val _isCheckingAppUpdate = MutableStateFlow(value = false)
+    val isCheckingAppUpdate: StateFlow<Boolean> = _isCheckingAppUpdate.asStateFlow()
+
     val notificationsEnabled = dataStoreManager.isNotificationsEnabled
     val themeMode = dataStoreManager.themeMode
 
@@ -129,7 +135,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                 owner = finalOwner,
                 repo = finalRepo,
                 iconUrl = "https://github.com/$finalOwner.png",
-                isUserAdded = true
+                isUserAdded = true,
             )
             val currentList = _userProjects.value.toMutableList()
             if (!currentList.any { (it.owner == finalOwner) && (it.repo == finalRepo) }) {
@@ -145,7 +151,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         if (!project.isUserAdded) return
         viewModelScope.launch {
             val currentList = _userProjects.value.toMutableList()
-            currentList.removeAll { it.owner == project.owner && it.repo == project.repo }
+            currentList.removeAll { (it.owner == project.owner) && (it.repo == project.repo) }
             dataStoreManager.saveUserRepos(currentList)
         }
     }
@@ -231,14 +237,12 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                             val localStable = dataStoreManager.getVersion("${project.repo}_stable")
                             val localBeta = dataStoreManager.getVersion("${project.repo}_beta")
 
-                            if (stableResult != null) {
-                                if (localStable != stableResult.tagName) {
-                                    if (context != null && localStable != null && isNewVersionAvailable(localStable, stableResult.tagName)) {
-                                        createNotificationChannel(context)
-                                        sendNotification(context, "${project.name} (Stable)", stableResult.tagName)
-                                    }
-                                    dataStoreManager.saveVersion("${project.repo}_stable", stableResult.tagName)
+                            if (stableResult != null && (localStable != stableResult.tagName)) {
+                                if (context != null && localStable != null && isNewVersionAvailable(localStable, stableResult.tagName)) {
+                                    createNotificationChannel(context)
+                                    sendNotification(context, "${project.name} (Stable)", stableResult.tagName)
                                 }
+                                dataStoreManager.saveVersion("${project.repo}_stable", stableResult.tagName)
                             }
                             
                             if (beta != null) {
@@ -309,6 +313,26 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
             dataStoreManager.setThemeMode(mode)
+        }
+    }
+
+    fun checkForAppUpdate() {
+        viewModelScope.launch {
+            _isCheckingAppUpdate.value = true
+            try {
+                // Mick51/FPVUpdater
+                val latest = RetrofitInstance.api.getLatestRelease("Mick51", "FPVUpdater")
+                // Comparaison version actuelle (BuildConfig.VERSION_NAME) vs GitHub tag
+                if (compareVersions(BuildConfig.VERSION_NAME, latest.tagName) < 0) {
+                    _appUpdateInfo.value = latest
+                } else {
+                    _appUpdateInfo.value = null
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Erreur check mise à jour app: ${e.message}")
+            } finally {
+                _isCheckingAppUpdate.value = false
+            }
         }
     }
 

@@ -30,4 +30,11 @@
     <string name="author_label">Auteur</string>
     <string name="license_label">Licence</string>
     <string name="contact_label">Contact</string>
+    <string name="help_title">Aides</string>
+    <string name="update_section_title">Mise à Jour</string>
+    <string name="app_version_label">Version de l’application</string>
+    <string name="check_app_updates_btn">Rechercher une mise à jour</string>
+    <string name="app_up_to_date">L’application est à jour</string>
+    <string name="app_update_available">Une nouvelle version de l’application est disponible !</string>
+    <string name="download_update_btn">Télécharger</string>
 </resources>
