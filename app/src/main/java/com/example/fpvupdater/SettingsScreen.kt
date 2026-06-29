@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -299,6 +300,48 @@ fun SettingsScreen(
                                 context.startActivity(intent)
                             }
                             AboutRow(label = stringResource(id = R.string.license_label), value = "GNU GPL v3")
+                        }
+                    }
+                }
+
+                // Section Contribution
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = stringResource(id = R.string.contribution_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(id = R.string.contribution_desc),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                Button(
+                                    onClick = { openUrl(context, "https://paypal.me/MickaelNaude") },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF0070BA), // Couleur PayPal
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Payments, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(id = R.string.contribution_btn))
+                                }
+                            }
                         }
                     }
                 }

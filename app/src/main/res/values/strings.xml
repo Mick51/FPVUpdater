@@ -44,4 +44,7 @@
     <string name="lang_es">Español</string>
     <string name="lang_pl">Polski</string>
     <string name="lang_ru">Русский</string>
+    <string name="contribution_title">Contribution</string>
+    <string name="contribution_desc">Soutenir le développement du projet</string>
+    <string name="contribution_btn">Faire un don</string>
 </resources>
