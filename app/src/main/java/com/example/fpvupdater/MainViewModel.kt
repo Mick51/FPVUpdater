@@ -236,7 +236,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                             val beta = sortedByDate.firstOrNull { it.prerelease }
 
                             // Si toujours rien du tout, on tente les Tags
-                            if (stableResult == null || stableResult.tagName.startsWith("untagged-")) {
+                            if ((stableResult == null) || (stableResult.tagName.startsWith("untagged-"))) {
                                 val tags = RetrofitInstance.api.getTags(project.owner, project.repo)
                                 if (tags.isNotEmpty()) {
                                     val latestTag = tags[0]
@@ -273,7 +273,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                                 stableVersion = stableResult?.tagName ?: "No version",
                                 stableUrl = stableResult?.htmlUrl ?: "",
                                 betaVersion = beta?.tagName ?: "No Beta",
-                                betaUrl = beta?.htmlUrl ?: ""
+                                betaUrl = beta?.htmlUrl ?: "",
                             )
                         } catch (e: Exception) {
                             Log.e("MainViewModel", "Erreur lors du chargement de ${project.name}: ${e.message}", e)
@@ -414,7 +414,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                 workManager.enqueueUniquePeriodicWork(
                     "FPVUpdateCheck",
                     ExistingPeriodicWorkPolicy.KEEP,
-                    updateRequest
+                    updateRequest,
                 )
             } else {
                 workManager.cancelUniqueWork("FPVUpdateCheck")

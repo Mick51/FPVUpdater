@@ -24,7 +24,7 @@ data class ReleaseResponse(
     @SerializedName("html_url") val htmlUrl: String,
     @SerializedName("prerelease") val prerelease: Boolean,
     @SerializedName("published_at") val publishedAt: String? = null,
-    @SerializedName("assets") val assets: List<ReleaseAsset> = emptyList()
+    @SerializedName("assets") val assets: List<ReleaseAsset> = emptyList(),
 )
 
 data class ReleaseAsset(

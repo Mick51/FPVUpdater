@@ -92,14 +92,14 @@ fun RepoForm(
                     onValueChange = { owner = it },
                     label = { Text("Propriétaire") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
                 )
                 OutlinedTextField(
                     value = repo,
                     onValueChange = { repo = it },
                     label = { Text("Dépôt") },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
                 )
             }
         }
@@ -194,10 +194,17 @@ fun SettingsScreen(
                             if (isCheckingAppUpdate) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                             } else {
-                                Button(onClick = { viewModel.checkForAppUpdate() }) {
-                                    Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(id = R.string.check_app_updates_btn))
+                                OutlinedButton(
+                                    onClick = { viewModel.checkForAppUpdate() },
+                                    modifier = Modifier.height(36.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                                ) {
+                                    Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = stringResource(id = R.string.check_app_updates_btn),
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
                                 }
                             }
                         }
@@ -229,9 +236,10 @@ fun SettingsScreen(
                                     } else {
                                         Button(
                                             onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
-                                            modifier = Modifier.align(Alignment.End)
+                                            modifier = Modifier.align(Alignment.End).height(32.dp),
+                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                                         ) {
-                                            Text(stringResource(id = R.string.download_update_btn))
+                                            Text(stringResource(id = R.string.download_update_btn), style = MaterialTheme.typography.labelMedium)
                                         }
                                     }
                                 }

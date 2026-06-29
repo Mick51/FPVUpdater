@@ -187,7 +187,7 @@ fun MainScreen(
 @Composable
 fun MainContent(
     modifier: Modifier = Modifier,
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
 ) {
     val context = LocalContext.current
     val projects by viewModel.projects.collectAsState()
@@ -247,9 +247,10 @@ fun MainContent(
                         } else {
                             Button(
                                 onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
-                                modifier = Modifier.align(Alignment.End)
+                                modifier = Modifier.align(Alignment.End).height(32.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                             ) {
-                                Text(stringResource(id = R.string.download_update_btn))
+                                Text(stringResource(id = R.string.download_update_btn), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
