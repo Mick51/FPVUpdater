@@ -125,7 +125,7 @@ fun RepoForm(
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val context = LocalContext.current
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState(initial = true)
@@ -152,10 +152,10 @@ fun SettingsScreen(
                         }
                     }
                 )
-                TabRow(
+                PrimaryTabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary
+                    contentColor = MaterialTheme.colorScheme.primary,
                 ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
