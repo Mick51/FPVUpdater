@@ -23,5 +23,11 @@ data class ReleaseResponse(
     @SerializedName("name") val name: String,
     @SerializedName("html_url") val htmlUrl: String,
     @SerializedName("prerelease") val prerelease: Boolean,
-    @SerializedName("published_at") val publishedAt: String? = null
+    @SerializedName("published_at") val publishedAt: String? = null,
+    @SerializedName("assets") val assets: List<ReleaseAsset> = emptyList()
+)
+
+data class ReleaseAsset(
+    @SerializedName("name") val name: String,
+    @SerializedName("browser_download_url") val downloadUrl: String
 )

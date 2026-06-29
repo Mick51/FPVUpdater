@@ -135,6 +135,7 @@ fun SettingsScreen(
     
     val appUpdateInfo by viewModel.appUpdateInfo.collectAsState()
     val isCheckingAppUpdate by viewModel.isCheckingAppUpdate.collectAsState()
+    val isDownloading by viewModel.isDownloading.collectAsState()
 
     Scaffold(
         topBar = {
@@ -218,11 +219,20 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     Spacer(Modifier.height(8.dp))
-                                    Button(
-                                        onClick = { openUrl(context, appUpdateInfo?.htmlUrl ?: "") },
-                                        modifier = Modifier.align(Alignment.End)
-                                    ) {
-                                        Text(stringResource(id = R.string.download_update_btn))
+                                    if (isDownloading) {
+                                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                        Text(
+                                            text = "Téléchargement en cours...",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                                        )
+                                    } else {
+                                        Button(
+                                            onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
+                                            modifier = Modifier.align(Alignment.End)
+                                        ) {
+                                            Text(stringResource(id = R.string.download_update_btn))
+                                        }
                                     }
                                 }
                             }

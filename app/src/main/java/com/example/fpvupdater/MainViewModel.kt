@@ -16,8 +16,20 @@
 
 package com.example.fpvupdater
 
+import android.app.DownloadManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.os.Environment
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
@@ -74,6 +86,9 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     private val _isCheckingAppUpdate = MutableStateFlow(value = false)
     val isCheckingAppUpdate: StateFlow<Boolean> = _isCheckingAppUpdate.asStateFlow()
+
+    private val _isDownloading = MutableStateFlow(value = false)
+    val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
 
     val notificationsEnabled = dataStoreManager.isNotificationsEnabled
     val themeMode = dataStoreManager.themeMode
@@ -158,7 +173,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     private fun isNewVersionAvailable(local: String, online: String): Boolean {
         val ignoredValues = listOf("Chargement...", "Loading...", "Aucune version", "No version", "Erreur réseau", "Network error")
-        return !ignoredValues.contains(local) && local != online
+        return (!ignoredValues.contains(local)) && (local != online)
     }
 
     private fun parseVersion(version: String): List<Int> {
@@ -229,7 +244,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                                         tagName = latestTag.name,
                                         name = latestTag.name,
                                         htmlUrl = "https://github.com/${project.owner}/${project.repo}/tags",
-                                        prerelease = false
+                                        prerelease = false,
                                     )
                                 }
                             }
@@ -245,14 +260,12 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                                 dataStoreManager.saveVersion("${project.repo}_stable", stableResult.tagName)
                             }
                             
-                            if (beta != null) {
-                                if (localBeta != beta.tagName) {
-                                    if (context != null && localBeta != null && isNewVersionAvailable(localBeta, beta.tagName)) {
-                                        createNotificationChannel(context)
-                                        sendNotification(context, "${project.name} (Beta)", beta.tagName)
-                                    }
-                                    dataStoreManager.saveVersion("${project.repo}_beta", beta.tagName)
+                            if (beta != null && (localBeta != beta.tagName)) {
+                                if (context != null && localBeta != null && isNewVersionAvailable(localBeta, beta.tagName)) {
+                                    createNotificationChannel(context)
+                                    sendNotification(context, "${project.name} (Beta)", beta.tagName)
                                 }
+                                dataStoreManager.saveVersion("${project.repo}_beta", beta.tagName)
                             }
 
                             val key = "${project.owner}/${project.repo}"
@@ -282,14 +295,14 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         val title = context.getString(R.string.new_version_title, projectName)
         val message = context.getString(R.string.new_version_message, version)
         
-        val builder = androidx.core.app.NotificationCompat.Builder(context, "FPV_UPDATES_CHANNEL")
+        val builder = NotificationCompat.Builder(context, "FPV_UPDATES_CHANNEL")
             .setSmallIcon(android.R.drawable.stat_notify_chat)
             .setContentTitle(title)
             .setContentText(message)
-            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
 
-        with(androidx.core.app.NotificationManagerCompat.from(context)) {
+        with(NotificationManagerCompat.from(context)) {
             try {
                 notify(projectName.hashCode(), builder.build())
             } catch (_: SecurityException) { }
@@ -297,15 +310,15 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     }
 
     private fun createNotificationChannel(context: Context) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = context.getString(R.string.notification_channel_name)
             val descriptionText = context.getString(R.string.notification_channel_desc)
-            val importance = android.app.NotificationManager.IMPORTANCE_HIGH
-            val channel = android.app.NotificationChannel("FPV_UPDATES_CHANNEL", name, importance).apply {
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel("FPV_UPDATES_CHANNEL", name, importance).apply {
                 description = descriptionText
             }
-            val notificationManager: android.app.NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
@@ -333,6 +346,54 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
             } finally {
                 _isCheckingAppUpdate.value = false
             }
+        }
+    }
+
+    fun downloadAppUpdate(context: Context, release: ReleaseResponse) {
+        val apkAsset = release.assets.find { it.name.endsWith(".apk") } ?: return
+        
+        _isDownloading.value = true
+        
+        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val request = DownloadManager.Request(apkAsset.downloadUrl.toUri())
+            .setTitle("FPV Updater Update")
+            .setDescription("Téléchargement de la version ${release.tagName}")
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, apkAsset.name)
+            .setAllowedOverMetered(true)
+            .setAllowedOverRoaming(true)
+
+        val downloadId = downloadManager.enqueue(request)
+        
+        // BroadcastReceiver pour installer après téléchargement
+        val onComplete = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
+                if (id == downloadId) {
+                    _isDownloading.value = false
+                    installApk(context, apkAsset.name)
+                    context.unregisterReceiver(this)
+                }
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            context.registerReceiver(onComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+        }
+    }
+
+    private fun installApk(context: Context, fileName: String) {
+        val file = java.io.File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
+        if (file.exists()) {
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+            val install = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(install)
         }
     }
 

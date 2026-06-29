@@ -136,6 +136,11 @@ fun MainScreen(
     onNavigateToAddRepo: () -> Unit,
 ) {
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.checkForAppUpdate()
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -195,6 +200,9 @@ fun MainContent(
     val pullRefreshState = rememberPullRefreshState(isRefreshing, onRefresh = { viewModel.refreshData(context) })
 
     Box(modifier = modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
+        val appUpdateInfo by viewModel.appUpdateInfo.collectAsState()
+        val isDownloading by viewModel.isDownloading.collectAsState()
+
         Column {
             if (isRefreshing) {
                 LinearProgressIndicator(
@@ -203,6 +211,51 @@ fun MainContent(
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
+            
+            if (appUpdateInfo != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(id = R.string.app_update_available),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = "Version ${appUpdateInfo?.tagName} disponible",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 32.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        
+                        if (isDownloading) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            Text(
+                                text = "Téléchargement en cours...",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                        } else {
+                            Button(
+                                onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Text(stringResource(id = R.string.download_update_btn))
+                            }
+                        }
+                    }
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
