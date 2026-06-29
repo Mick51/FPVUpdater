@@ -310,17 +310,6 @@ fun ProjectCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            if (onDelete != null) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
-                    IconButton(onClick = onDelete) {
-                        Icon(
-                            Icons.Default.Delete, 
-                            contentDescription = stringResource(id = R.string.delete_repo_desc),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
             Row(
                 modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -343,7 +332,7 @@ fun ProjectCard(
                             text = project.name,
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                     
@@ -399,6 +388,16 @@ fun ProjectCard(
                                 enabled = project.betaUrl.isNotEmpty()
                             )
                         }
+                    }
+                }
+
+                onDelete?.let {
+                    IconButton(onClick = it) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(id = R.string.delete_repo_desc),
+                            tint = MaterialTheme.colorScheme.error,
+                        )
                     }
                 }
             }
