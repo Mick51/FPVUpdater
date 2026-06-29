@@ -25,6 +25,7 @@ import android.content.pm.PackageManager
 import androidx.core.net.toUri
 import android.os.Build
 import android.os.Bundle
+import java.util.Locale
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -90,15 +91,32 @@ class MainActivity : ComponentActivity() {
                 },
             )
             val themeMode by viewModel.themeMode.collectAsState(initial = "dark")
+            val language by viewModel.language.collectAsState(initial = "system")
 
-            FPVUpdaterTheme(themeMode = themeMode) {
-                NotificationPermissionHandler()
-
-                LaunchedEffect(Unit) {
-                    viewModel.refreshData(this@MainActivity)
+            // Gestion de la langue
+            val context = LocalContext.current
+            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+            val localeContext = remember(language) {
+                if (language == "system") context
+                else {
+                    val locale = Locale.forLanguageTag(language)
+                    Locale.setDefault(locale)
+                    val config = android.content.res.Configuration(configuration)
+                    config.setLocale(locale)
+                    context.createConfigurationContext(config)
                 }
+            }
 
-                AppNavigation(viewModel)
+            CompositionLocalProvider(LocalContext provides localeContext) {
+                FPVUpdaterTheme(themeMode = themeMode) {
+                    NotificationPermissionHandler()
+
+                    LaunchedEffect(Unit) {
+                        viewModel.refreshData(this@MainActivity)
+                    }
+
+                    AppNavigation(viewModel)
+                }
             }
         }
         scheduleUpdateCheck(this)
@@ -208,7 +226,7 @@ fun MainContent(
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
             }
             
@@ -218,7 +236,7 @@ fun MainContent(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -307,27 +325,29 @@ fun ProjectCard(
                 modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Logo du projet
-                AsyncImage(
-                    model = project.iconUrl,
-                    contentDescription = "${project.name} logo",
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop
-                )
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = project.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Logo du projet réduit et placé à côté du nom
+                        AsyncImage(
+                            model = project.iconUrl,
+                            contentDescription = "${project.name} logo",
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(6.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Text(
+                            text = project.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                     
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),

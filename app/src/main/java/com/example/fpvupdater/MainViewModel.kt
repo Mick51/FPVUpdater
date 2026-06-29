@@ -92,6 +92,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     val notificationsEnabled = dataStoreManager.isNotificationsEnabled
     val themeMode = dataStoreManager.themeMode
+    val language = dataStoreManager.language
 
     init {
         Log.d("API_DEBUG", "Token chargé : ${BuildConfig.GITHUB_TOKEN.take(10)}...")
@@ -326,6 +327,12 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
             dataStoreManager.setThemeMode(mode)
+        }
+    }
+
+    fun setLanguage(lang: String) {
+        viewModelScope.launch {
+            dataStoreManager.setLanguage(lang)
         }
     }
 

@@ -36,6 +36,7 @@ class DataStoreManager(private val context: Context) {
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val USER_REPOS = stringPreferencesKey("user_repos")
         val THEME_MODE = stringPreferencesKey("theme_mode") // "dark", "light", "system"
+        val LANGUAGE = stringPreferencesKey("language") // "fr", "en", "it", "es", "pl", "ru", "system"
     }
 
     private val gson = Gson()
@@ -82,6 +83,14 @@ class DataStoreManager(private val context: Context) {
 
     val themeMode: Flow<String> = context.dataStore.data
         .map { it[THEME_MODE] ?: "dark" }
+        .distinctUntilChanged()
+
+    suspend fun setLanguage(lang: String) {
+        context.dataStore.edit { it[LANGUAGE] = lang }
+    }
+
+    val language: Flow<String> = context.dataStore.data
+        .map { it[LANGUAGE] ?: "system" }
         .distinctUntilChanged()
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {

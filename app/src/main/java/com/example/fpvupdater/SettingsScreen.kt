@@ -112,7 +112,7 @@ fun RepoForm(
                 }
             },
             modifier = Modifier.align(Alignment.End),
-            enabled = name.isNotBlank() && owner.isNotBlank() && repo.isNotBlank()
+            enabled = name.isNotBlank() && owner.isNotBlank() && repo.isNotBlank(),
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
@@ -121,7 +121,7 @@ fun RepoForm(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
@@ -130,6 +130,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState(initial = true)
     val themeMode by viewModel.themeMode.collectAsState(initial = "dark")
+    val language by viewModel.language.collectAsState(initial = "system")
     val projects by viewModel.projects.collectAsState()
     val userProjects = remember(projects) { projects.filter { it.isUserAdded } }
     
@@ -137,16 +138,34 @@ fun SettingsScreen(
     val isCheckingAppUpdate by viewModel.isCheckingAppUpdate.collectAsState()
     val isDownloading by viewModel.isDownloading.collectAsState()
 
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Général", "Dépôts")
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(id = R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+            Column {
+                TopAppBar(
+                    title = { Text(stringResource(id = R.string.settings_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Retour")
+                        }
+                    }
+                )
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
                     }
                 }
-            )
+            }
         }
     ) { innerPadding ->
         LazyColumn(
@@ -156,90 +175,94 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Section Mise à Jour
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stringResource(id = R.string.update_section_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+            if (selectedTab == 0) {
+                // --- ONGLEE GÉNÉRAL ---
+                
+                // Section Mise à Jour
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
-                        Spacer(Modifier.height(12.dp))
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = stringResource(id = R.string.app_version_label),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "v${BuildConfig.VERSION_NAME}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            
-                            if (isCheckingAppUpdate) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            } else {
-                                OutlinedButton(
-                                    onClick = { viewModel.checkForAppUpdate() },
-                                    modifier = Modifier.height(36.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
-                                ) {
-                                    Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(
-                                        text = stringResource(id = R.string.check_app_updates_btn),
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                }
-                            }
-                        }
-                        
-                        if (appUpdateInfo != null) {
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = stringResource(id = R.string.update_section_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                             Spacer(Modifier.height(12.dp))
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                                modifier = Modifier.fillMaxWidth()
+                            
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
+                                Column {
                                     Text(
-                                        text = stringResource(id = R.string.app_update_available),
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        text = stringResource(id = R.string.app_version_label),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "v${BuildConfig.VERSION_NAME}",
+                                        style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Text(
-                                        text = "Version ${appUpdateInfo?.tagName} disponible",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    if (isDownloading) {
-                                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                }
+                                
+                                if (isCheckingAppUpdate) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                } else {
+                                    OutlinedButton(
+                                        onClick = { viewModel.checkForAppUpdate() },
+                                        modifier = Modifier.height(36.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                                    ) {
+                                        Icon(Icons.Default.SystemUpdate, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(6.dp))
                                         Text(
-                                            text = "Téléchargement en cours...",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                                            text = stringResource(id = R.string.check_app_updates_btn),
+                                            style = MaterialTheme.typography.labelLarge
                                         )
-                                    } else {
-                                        Button(
-                                            onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
-                                            modifier = Modifier.align(Alignment.End).height(32.dp),
-                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
-                                        ) {
-                                            Text(stringResource(id = R.string.download_update_btn), style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                            }
+                            
+                            if (appUpdateInfo != null) {
+                                Spacer(Modifier.height(12.dp))
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        Text(
+                                            text = stringResource(id = R.string.app_update_available),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "Version ${appUpdateInfo?.tagName} disponible",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Spacer(Modifier.height(8.dp))
+                                        if (isDownloading) {
+                                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                            Text(
+                                                text = "Téléchargement en cours...",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                                            )
+                                        } else {
+                                            Button(
+                                                onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
+                                                modifier = Modifier.align(Alignment.End).height(32.dp),
+                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                                            ) {
+                                                Text(stringResource(id = R.string.download_update_btn), style = MaterialTheme.typography.labelMedium)
+                                            }
                                         }
                                     }
                                 }
@@ -247,170 +270,229 @@ fun SettingsScreen(
                         }
                     }
                 }
-            }
 
-            // Section Aides
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stringResource(id = R.string.help_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        
-                        AboutRow(label = stringResource(id = R.string.author_label), value = "Mick")
-                        AboutRow(
-                            label = stringResource(id = R.string.contact_label),
-                            value = "naudclick.informatik@gmail.com"
-                        ) {
-                            val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = "mailto:naudclick.informatik@gmail.com".toUri()
-                            }
-                            context.startActivity(intent)
-                        }
-                        AboutRow(label = stringResource(id = R.string.license_label), value = "GNU GPL v3")
-                    }
-                }
-            }
-
-            // Section Notifications
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(stringResource(id = R.string.notifications_label), style = MaterialTheme.typography.bodyLarge)
-                            Spacer(Modifier.weight(1f))
-                            Switch(
-                                checked = notificationsEnabled,
-                                onCheckedChange = { viewModel.toggleNotifications(it, context) }
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "Vérifie les nouvelles versions en arrière-plan et envoie une notification.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Section Thème
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stringResource(id = R.string.theme_section_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            listOf(
-                                "dark" to R.string.theme_dark,
-                                "light" to R.string.theme_light,
-                                "system" to R.string.theme_system
-                            ).forEach { (mode, labelRes) ->
-                                FilterChip(
-                                    selected = themeMode == mode,
-                                    onClick = { viewModel.setThemeMode(mode) },
-                                    label = { Text(stringResource(id = labelRes)) },
-                                    leadingIcon = if (themeMode == mode) {
-                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item { HorizontalDivider() }
-
-            item {
-                Text(
-                    text = "Ajouter un dépôt via URL",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            item {
-                RepoForm { n, o, r -> viewModel.addUserRepository(n, o, r) }
-            }
-
-            item { HorizontalDivider() }
-
-            item {
-                Text(
-                    text = "Dépôts enregistrés",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            if (userProjects.isEmpty()) {
+                // Section Aides
                 item {
-                    Text(
-                        text = "Aucun dépôt personnalisé ajouté.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-            } else {
-                items(userProjects) { project ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
-                        ListItem(
-                            headlineContent = { Text(project.name, fontWeight = FontWeight.SemiBold) },
-                            supportingContent = { Text("${project.owner}/${project.repo}") },
-                            trailingContent = {
-                                IconButton(onClick = { viewModel.removeUserRepository(project) }) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = stringResource(id = R.string.delete_repo_desc),
-                                        tint = MaterialTheme.colorScheme.error
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = stringResource(id = R.string.help_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            
+                            AboutRow(label = stringResource(id = R.string.author_label), value = "Mick")
+                            AboutRow(
+                                label = stringResource(id = R.string.contact_label),
+                                value = "naudclick.informatik@gmail.com"
+                            ) {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = "mailto:naudclick.informatik@gmail.com".toUri()
+                                }
+                                context.startActivity(intent)
+                            }
+                            AboutRow(label = stringResource(id = R.string.license_label), value = "GNU GPL v3")
+                        }
+                    }
+                }
+
+                // Section Notifications
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(stringResource(id = R.string.notifications_label), style = MaterialTheme.typography.bodyLarge)
+                                Spacer(Modifier.weight(1f))
+                                Switch(
+                                    checked = notificationsEnabled,
+                                    onCheckedChange = { viewModel.toggleNotifications(it, context) }
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Vérifie les nouvelles versions en arrière-plan et envoie une notification.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // Section Thème
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = stringResource(id = R.string.theme_section_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf(
+                                    "dark" to R.string.theme_dark,
+                                    "light" to R.string.theme_light,
+                                    "system" to R.string.theme_system
+                                ).forEach { (mode, labelRes) ->
+                                    FilterChip(
+                                        selected = themeMode == mode,
+                                        onClick = { viewModel.setThemeMode(mode) },
+                                        label = { Text(stringResource(id = labelRes)) },
+                                        leadingIcon = if (themeMode == mode) {
+                                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        } else null,
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                        )
                                     )
                                 }
-                            },
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                            }
+                        }
+                    }
+                }
+
+                // Section Langue
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = stringResource(id = R.string.language_section_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            
+                            // Grille pour les langues (3 par ligne)
+                            val languages = listOf(
+                                "system" to R.string.theme_system,
+                                "fr" to R.string.lang_fr,
+                                "en" to R.string.lang_en,
+                                "it" to R.string.lang_it,
+                                "es" to R.string.lang_es,
+                                "pl" to R.string.lang_pl,
+                                "ru" to R.string.lang_ru
+                            )
+                            
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                languages.forEach { (code, labelRes) ->
+                                    FilterChip(
+                                        selected = language == code,
+                                        onClick = { viewModel.setLanguage(code) },
+                                        label = { Text(stringResource(id = labelRes)) },
+                                        leadingIcon = if (language == code) {
+                                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                        } else null,
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // --- ONGLET DÉPÔTS PERSONNALISÉS ---
+                
+                item {
+                    Text(
+                        text = "Ajouter un dépôt via URL",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Box(modifier = Modifier.padding(16.dp)) {
+                            RepoForm { n, o, r -> viewModel.addUserRepository(n, o, r) }
+                        }
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "Dépôts enregistrés",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                if (userProjects.isEmpty()) {
+                    item {
+                        Text(
+                            text = "Aucun dépôt personnalisé ajouté.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                } else {
+                    items(userProjects) { project ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            ListItem(
+                                headlineContent = { Text(project.name, fontWeight = FontWeight.SemiBold) },
+                                supportingContent = { Text("${project.owner}/${project.repo}") },
+                                trailingContent = {
+                                    IconButton(onClick = { viewModel.removeUserRepository(project) }) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = stringResource(id = R.string.delete_repo_desc),
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                            )
+                        }
                     }
                 }
             }
