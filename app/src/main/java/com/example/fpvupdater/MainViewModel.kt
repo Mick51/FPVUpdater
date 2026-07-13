@@ -91,6 +91,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
 
     val notificationsEnabled = dataStoreManager.isNotificationsEnabled
+    val autoRefreshEnabled = dataStoreManager.isAutoRefreshEnabled
     val themeMode = dataStoreManager.themeMode
     val language = dataStoreManager.language
 
@@ -404,9 +405,15 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         }
     }
 
-    fun toggleNotifications(enabled: Boolean, context: Context) {
+    fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
             dataStoreManager.setNotificationsEnabled(enabled)
+        }
+    }
+
+    fun toggleAutoRefresh(enabled: Boolean, context: Context) {
+        viewModelScope.launch {
+            dataStoreManager.setAutoRefreshEnabled(enabled)
             
             val workManager = WorkManager.getInstance(context)
             if (enabled) {

@@ -37,6 +37,7 @@ class DataStoreManager(private val context: Context) {
         val USER_REPOS = stringPreferencesKey("user_repos")
         val THEME_MODE = stringPreferencesKey("theme_mode") // "dark", "light", "system"
         val LANGUAGE = stringPreferencesKey("language") // "fr", "en", "it", "es", "pl", "ru", "system"
+        val AUTO_REFRESH = booleanPreferencesKey("auto_refresh")
     }
 
     private val gson = Gson()
@@ -91,6 +92,14 @@ class DataStoreManager(private val context: Context) {
 
     val language: Flow<String> = context.dataStore.data
         .map { it[LANGUAGE] ?: "system" }
+        .distinctUntilChanged()
+
+    suspend fun setAutoRefreshEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[AUTO_REFRESH] = enabled }
+    }
+
+    val isAutoRefreshEnabled: Flow<Boolean> = context.dataStore.data
+        .map { it[AUTO_REFRESH] ?: true }
         .distinctUntilChanged()
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {

@@ -39,7 +39,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
@@ -57,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -230,64 +230,61 @@ fun MainContent(
                 )
             }
             
-            if (appUpdateInfo != null) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(id = R.string.app_update_available),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = "Version ${appUpdateInfo?.tagName} disponible",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 32.dp)
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        
-                        if (isDownloading) {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                            Text(
-                                text = "Téléchargement en cours...",
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        } else {
-                            Button(
-                                onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
-                                modifier = Modifier.align(Alignment.End).height(32.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
-                            ) {
-                                Text(stringResource(id = R.string.download_update_btn), style = MaterialTheme.typography.labelMedium)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (appUpdateInfo != null) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(
+                                        text = stringResource(id = R.string.app_update_available),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "Version ${appUpdateInfo?.tagName} disponible",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(start = 34.dp)
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                
+                                if (isDownloading) {
+                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                    Text(
+                                        text = "Téléchargement en cours...",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                    )
+                                } else {
+                                    Button(
+                                        onClick = { appUpdateInfo?.let { viewModel.downloadAppUpdate(context, it) } },
+                                        modifier = Modifier.align(Alignment.End).height(32.dp),
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                                    ) {
+                                        Text(stringResource(id = R.string.download_update_btn), style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
                 items(items = sortedProjects, key = { it.name }) { project ->
-                    ProjectCard(
-                        project = project,
-                        onOpenUrl = { url -> openUrl(context, url) },
-                        onDelete = if (project.isUserAdded) { 
-                            { viewModel.removeUserRepository(project) } 
-                        } else null
-                    )
+                    ProjectCard(project = project) { url -> openUrl(context, url) }
                 }
             }
         }
@@ -298,8 +295,7 @@ fun MainContent(
 @Composable
 fun ProjectCard(
     project: ProjectInfo, 
-    onOpenUrl: (String) -> Unit,
-    onDelete: (() -> Unit)? = null
+    onOpenUrl: (String) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -309,94 +305,84 @@ fun ProjectCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Logo du projet réduit et placé à côté du nom
-                        AsyncImage(
-                            model = project.iconUrl,
-                            contentDescription = "${project.name} logo",
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(RoundedCornerShape(6.dp)),
-                            contentScale = ContentScale.Crop
-                        )
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Logo du projet réduit et placé à côté du nom
+                    AsyncImage(
+                        model = project.iconUrl,
+                        contentDescription = "${project.name} logo",
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(6.dp)),
+                        contentScale = ContentScale.Crop
+                    )
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
 
-                        Text(
-                            text = project.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        // Version Stable
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(id = R.string.stable_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            AssistChip(
-                                onClick = { if (project.stableUrl.isNotEmpty()) onOpenUrl(project.stableUrl) },
-                                label = { 
-                                    Text(
-                                        text = project.stableVersion,
-                                        color = if (project.stableUrl.isNotEmpty()) VersionStable else MaterialTheme.colorScheme.onSurfaceVariant
-                                    ) 
-                                },
-                                leadingIcon = { 
-                                    Icon(
-                                        Icons.Default.CheckCircle, 
-                                        contentDescription = null,
-                                        tint = if (project.stableUrl.isNotEmpty()) VersionStable else MaterialTheme.colorScheme.onSurfaceVariant
-                                    ) 
-                                },
-                                enabled = project.stableUrl.isNotEmpty()
-                            )
-                        }
-                        
-                        // Version Beta
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(stringResource(id = R.string.beta_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            AssistChip(
-                                onClick = { if (project.betaUrl.isNotEmpty()) onOpenUrl(project.betaUrl) },
-                                label = { 
-                                    Text(
-                                        text = project.betaVersion,
-                                        color = if (project.betaUrl.isNotEmpty()) VersionBeta else MaterialTheme.colorScheme.onSurfaceVariant
-                                    ) 
-                                },
-                                colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else VersionBeta.copy(alpha = 0.1f)
-                                ),
-                                leadingIcon = { 
-                                    Icon(
-                                        Icons.Default.Warning, 
-                                        contentDescription = null,
-                                        tint = if (project.betaUrl.isNotEmpty()) VersionBeta else MaterialTheme.colorScheme.onSurfaceVariant
-                                    ) 
-                                },
-                                enabled = project.betaUrl.isNotEmpty()
-                            )
-                        }
-                    }
+                    Text(
+                        text = project.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-
-                onDelete?.let {
-                    IconButton(onClick = it) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = stringResource(id = R.string.delete_repo_desc),
-                            tint = MaterialTheme.colorScheme.error,
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Version Stable
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(stringResource(id = R.string.stable_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        AssistChip(
+                            onClick = { if (project.stableUrl.isNotEmpty()) onOpenUrl(project.stableUrl) },
+                            label = { 
+                                Text(
+                                    text = project.stableVersion,
+                                    color = if (project.stableUrl.isNotEmpty()) VersionStable else MaterialTheme.colorScheme.onSurfaceVariant
+                                ) 
+                            },
+                            leadingIcon = { 
+                                Icon(
+                                    Icons.Default.CheckCircle, 
+                                    contentDescription = null,
+                                    tint = if (project.stableUrl.isNotEmpty()) VersionStable else MaterialTheme.colorScheme.onSurfaceVariant
+                                ) 
+                            },
+                            enabled = project.stableUrl.isNotEmpty()
+                        )
+                    }
+                    
+                    // Version Beta
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(stringResource(id = R.string.beta_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        AssistChip(
+                            onClick = { if (project.betaUrl.isNotEmpty()) onOpenUrl(project.betaUrl) },
+                            label = { 
+                                Text(
+                                    text = project.betaVersion,
+                                    color = if (project.betaUrl.isNotEmpty()) VersionBeta else MaterialTheme.colorScheme.onSurfaceVariant
+                                ) 
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = if (project.betaUrl.isEmpty()) Color.Transparent else VersionBeta.copy(alpha = 0.1f)
+                            ),
+                            leadingIcon = { 
+                                Icon(
+                                    Icons.Default.Warning, 
+                                    contentDescription = null,
+                                    tint = if (project.betaUrl.isNotEmpty()) VersionBeta else MaterialTheme.colorScheme.onSurfaceVariant
+                                ) 
+                            },
+                            enabled = project.betaUrl.isNotEmpty()
                         )
                     }
                 }

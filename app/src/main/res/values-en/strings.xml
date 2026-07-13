@@ -37,6 +37,9 @@
     <string name="app_up_to_date">The app is up to date</string>
     <string name="app_update_available">A new version of the app is available!</string>
     <string name="download_update_btn">Download</string>
+    <string name="auto_refresh_label">Auto Refresh</string>
+    <string name="auto_refresh_desc">Checks for updates in background even when the app is closed.</string>
+    <string name="notifications_desc">Shows a notification when a new version is detected.</string>
     <string name="language_section_title">Language</string>
     <string name="lang_fr">Français</string>
     <string name="lang_en">English</string>

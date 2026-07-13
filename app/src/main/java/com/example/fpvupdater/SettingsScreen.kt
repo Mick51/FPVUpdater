@@ -130,6 +130,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState(initial = true)
+    val autoRefreshEnabled by viewModel.autoRefreshEnabled.collectAsState(initial = true)
     val themeMode by viewModel.themeMode.collectAsState(initial = "dark")
     val language by viewModel.language.collectAsState(initial = "system")
     val projects by viewModel.projects.collectAsState()
@@ -346,6 +347,37 @@ fun SettingsScreen(
                     }
                 }
 
+                // Section Rafraîchissement automatique
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(stringResource(id = R.string.auto_refresh_label), style = MaterialTheme.typography.bodyLarge)
+                                Spacer(Modifier.weight(1f))
+                                Switch(
+                                    checked = autoRefreshEnabled,
+                                    onCheckedChange = { viewModel.toggleAutoRefresh(it, context) }
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(id = R.string.auto_refresh_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
                 // Section Notifications
                 item {
                     Card(
@@ -364,12 +396,12 @@ fun SettingsScreen(
                                 Spacer(Modifier.weight(1f))
                                 Switch(
                                     checked = notificationsEnabled,
-                                    onCheckedChange = { viewModel.toggleNotifications(it, context) }
+                                    onCheckedChange = { viewModel.toggleNotifications(it) }
                                 )
                             }
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                text = "Vérifie les nouvelles versions en arrière-plan et envoie une notification.",
+                                text = stringResource(id = R.string.notifications_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
