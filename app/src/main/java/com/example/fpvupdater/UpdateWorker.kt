@@ -51,7 +51,8 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
     override suspend fun doWork(): Result {
         val dataStore = DataStoreManager(applicationContext)
         
-        if (!dataStore.isNotificationsEnabled.first()) {
+        // On respecte l'option de rafraîchissement automatique
+        if (!dataStore.isAutoRefreshEnabled.first()) {
             return Result.success()
         }
 

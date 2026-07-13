@@ -16,7 +16,6 @@
 
 package com.example.fpvupdater
 
-import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 
 @Composable
 fun RepoForm(
@@ -163,7 +161,7 @@ fun SettingsScreen(
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            text = { Text(title) }
+                            text = { Text(title) },
                         )
                     }
                 }
@@ -295,10 +293,7 @@ fun SettingsScreen(
                                 label = stringResource(id = R.string.contact_label),
                                 value = "naudclick.informatik@gmail.com"
                             ) {
-                                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                    data = "mailto:naudclick.informatik@gmail.com".toUri()
-                                }
-                                context.startActivity(intent)
+                                openUrl(context, "mailto:naudclick.informatik@gmail.com")
                             }
                             AboutRow(label = stringResource(id = R.string.license_label), value = "GNU GPL v3")
                         }

@@ -22,11 +22,11 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.core.net.toUri
 import android.os.Build
 import android.os.Bundle
-import java.util.Locale
+import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,8 +70,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.work.*
 import coil.compose.AsyncImage
 import com.example.fpvupdater.ui.theme.FPVUpdaterTheme
+import com.example.fpvupdater.ui.theme.FpvBlack
 import com.example.fpvupdater.ui.theme.VersionBeta
 import com.example.fpvupdater.ui.theme.VersionStable
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
@@ -81,7 +84,9 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel(this)
         
         setContent {
-            val dataStoreManager = remember { DataStoreManager(this) }
+            val activity = this
+            val context = LocalContext.current
+            val dataStoreManager = remember { DataStoreManager(context) }
             val viewModel: MainViewModel = viewModel(
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -90,32 +95,44 @@ class MainActivity : ComponentActivity() {
                     }
                 },
             )
+            
             val themeMode by viewModel.themeMode.collectAsState(initial = "dark")
             val language by viewModel.language.collectAsState(initial = "system")
 
             // Gestion de la langue
-            val context = LocalContext.current
             val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-            val localeContext = remember(language) {
+            val localeContext = remember(language, configuration) {
                 if (language == "system") context
                 else {
-                    val locale = Locale.forLanguageTag(language)
-                    Locale.setDefault(locale)
-                    val config = android.content.res.Configuration(configuration)
-                    config.setLocale(locale)
-                    context.createConfigurationContext(config)
+                    try {
+                        val locale = Locale.forLanguageTag(language)
+                        Locale.setDefault(locale)
+                        val config = android.content.res.Configuration(configuration)
+                        config.setLocale(locale)
+                        context.createConfigurationContext(config)
+                    } catch (_: Exception) {
+                        context
+                    }
                 }
             }
 
-            CompositionLocalProvider(LocalContext provides localeContext) {
+            CompositionLocalProvider(
+                LocalContext provides localeContext,
+                LocalActivityResultRegistryOwner provides activity
+            ) {
                 FPVUpdaterTheme(themeMode = themeMode) {
-                    NotificationPermissionHandler()
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = if (themeMode == "dark") FpvBlack else Color.White
+                    ) {
+                        NotificationPermissionHandler()
 
-                    LaunchedEffect(Unit) {
-                        viewModel.refreshData(this@MainActivity)
+                        LaunchedEffect(Unit) {
+                            viewModel.refreshData(context)
+                        }
+
+                        AppNavigation(viewModel)
                     }
-
-                    AppNavigation(viewModel)
                 }
             }
         }
@@ -131,7 +148,8 @@ fun AppNavigation(viewModel: MainViewModel) {
             MainScreen(
                 viewModel = viewModel, 
                 onNavigateToSettings = { navController.navigate("settings") },
-            ) { navController.navigate("add_repo") } 
+                onNavigateToAddRepo = { navController.navigate("add_repo") }
+            )
         }
         composable("settings") { 
             SettingsScreen(
@@ -303,7 +321,7 @@ fun ProjectCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -438,9 +456,25 @@ private fun createNotificationChannel(context: Context) {
 }
 
 fun openUrl(context: Context, url: String) {
-    if (url.isNotEmpty()) {
+    if (url.isEmpty()) return
+    try {
         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-        context.startActivity(intent)
+        
+        // On essaie de remonter jusqu'à l'activité pour utiliser son contexte
+        var currentContext = context
+        while ((currentContext is android.content.ContextWrapper) && (currentContext !is android.app.Activity)) {
+            currentContext = currentContext.baseContext
+        }
+        
+        if (currentContext is android.app.Activity) {
+            currentContext.startActivity(intent)
+        } else {
+            // Si on ne trouve pas d'activité, on force le NEW_TASK
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        }
+    } catch (e: Exception) {
+        Log.e("MainActivity", "Erreur fatale ouverture URL: ${e.message}")
     }
 }
 

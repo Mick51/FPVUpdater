@@ -116,20 +116,22 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     }
 
     private suspend fun loadLocalDataFor(projectList: List<ProjectInfo>) {
-        val currentData = _projectData.value.toMutableMap()
-        val allPrefs = dataStoreManager.getAllPreferences()
-        var changed = false
-        projectList.forEach { project ->
-            val key = "${project.owner}/${project.repo}"
-            if (!currentData.containsKey(key)) {
-                val localStable = allPrefs["${project.repo}_stable"] ?: "Loading..."
-                val localBeta = allPrefs["${project.repo}_beta"] ?: "Loading..."
-                currentData[key] = project.copy(stableVersion = localStable, betaVersion = localBeta)
-                changed = true
+        withContext(Dispatchers.IO) {
+            val currentData = _projectData.value.toMutableMap()
+            val allPrefs = dataStoreManager.getAllPreferences()
+            var changed = false
+            projectList.forEach { project ->
+                val key = "${project.owner}/${project.repo}"
+                if (!currentData.containsKey(key)) {
+                    val localStable = allPrefs["${project.repo}_stable"] ?: "Loading..."
+                    val localBeta = allPrefs["${project.repo}_beta"] ?: "Loading..."
+                    currentData[key] = project.copy(stableVersion = localStable, betaVersion = localBeta)
+                    changed = true
+                }
             }
-        }
-        if (changed) {
-            _projectData.value = currentData
+            if (changed) {
+                _projectData.value = currentData
+            }
         }
     }
 
