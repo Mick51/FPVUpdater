@@ -23,8 +23,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -365,11 +365,14 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         _isDownloading.value = true
         
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val destinationFile = java.io.File(context.externalCacheDir, apkAsset.name)
+        if (destinationFile.exists()) destinationFile.delete()
+
         val request = DownloadManager.Request(apkAsset.downloadUrl.toUri())
             .setTitle("FPV Updater Update")
             .setDescription("Téléchargement de la version ${release.tagName}")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, apkAsset.name)
+            .setDestinationUri(Uri.fromFile(destinationFile))
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
 
@@ -395,7 +398,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     }
 
     private fun installApk(context: Context, fileName: String) {
-        val file = java.io.File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
+        val file = java.io.File(context.externalCacheDir, fileName)
         if (file.exists()) {
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
             val install = Intent(Intent.ACTION_VIEW).apply {

@@ -72,6 +72,16 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
 
         createNotificationChannel()
 
+        // Vérification de la mise à jour de l'application elle-même
+        try {
+            val latestAppRelease = RetrofitInstance.api.getLatestRelease("Mick51", "FPVUpdater")
+            if (compareVersions(BuildConfig.VERSION_NAME, latestAppRelease.tagName) < 0) {
+                sendNotification("FPV Updater", latestAppRelease.tagName)
+            }
+        } catch (e: Exception) {
+            Log.e("UpdateWorker", "Erreur check mise à jour app: ${e.message}")
+        }
+
         projectsToCheck.forEach { project ->
             try {
                 val releases = RetrofitInstance.api.getAllReleases(project.owner, project.repo)
@@ -92,7 +102,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                     stable = sortedByDate.firstOrNull { !it.prerelease }
                 }
 
-                if (stable == null || (stable.tagName.startsWith("untagged-"))) {
+                if ((stable == null) || (stable.tagName.startsWith("untagged-"))) {
                     val tags = RetrofitInstance.api.getTags(project.owner, project.repo)
                     if (tags.isNotEmpty()) {
                         val latestTag = tags[0]
